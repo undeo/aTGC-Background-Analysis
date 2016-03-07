@@ -1,5 +1,5 @@
 'g1_exo_doFit_class.py' is the original version
-'g1_exo_doFit_class_without_data_final.py' is changed with no data in signal region (and some changes for the plots)
+'g1_exo_doFit_class_without_data.py' is changed with no data in signal region (and some changes for the plots)
 
 
 code is working in CMSSW_5_3_32, not compatible with ROOT 6 !
@@ -7,7 +7,7 @@ code is working in CMSSW_5_3_32, not compatible with ROOT 6 !
 
 to run the code, use
 
-	python g1_exo_doFit_class_without_data_final.py -b -c el --mass 800 --category HPW --sample BulkG_WW_lvjj --jetalgo Mjpruned
+	python g1_exo_doFit_class_without_data.py -b -c el --mass 800 --category HPW --sample BulkG_WW_lvjj --jetalgo Mjpruned
 
 '-c el' is the channel, you have to run both '-c el' and '-c mu'
 '--mass 800' is the mass of the resonance, so it's irrelevant
