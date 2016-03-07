@@ -13,3 +13,8 @@ to run the code, use
 '--mass 800' is the mass of the resonance, so it's irrelevant
 '--cateogry HPW' sets the category, HP for High Purity and W for WW-category
 '--sample BulkG_WW_lvjj' sets the signal sample, also irrelevant
+
+
+samples are here:
+/afs/cern.ch/work/c/crenner/public/AnaSigTree_25ns
+copy the folder to your working directory
