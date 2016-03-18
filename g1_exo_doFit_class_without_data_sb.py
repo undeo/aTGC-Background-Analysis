@@ -550,7 +550,7 @@ objName ==objName_before ):
         cMassFit.SaveAs(rlt_file.Data());
 
         rlt_file.ReplaceAll(".pdf",".root");
-        cMassFit.SaveAs(rlt_file.Data());
+        #cMassFit.SaveAs(rlt_file.Data());
 
         if logy:
 	    if not isalpha:
@@ -559,7 +559,7 @@ objName ==objName_before ):
             cMassFit.SetLogy() ;
             cMassFit.Update();
             rlt_file.ReplaceAll(".root","_log.root");
-            cMassFit.SaveAs(rlt_file.Data());
+            #cMassFit.SaveAs(rlt_file.Data());
             rlt_file.ReplaceAll(".root",".pdf");
             cMassFit.SaveAs(rlt_file.Data());
             rlt_file.ReplaceAll(".pdf",".png");
@@ -728,7 +728,7 @@ objName ==objName_before ):
         cMassFit.SaveAs(rlt_file.Data());
         
         rlt_file.ReplaceAll(".pdf",".root");
-        cMassFit.SaveAs(rlt_file.Data());
+        #cMassFit.SaveAs(rlt_file.Data());
 
         string_file_name = TString(in_file_name);
         if string_file_name.EndsWith(".root"):
@@ -1380,6 +1380,7 @@ objName ==objName_before ):
       getattr(self.workspace4fit_,"import")(model) 
       self.workspace4fit_.pdf("model"+label+"_"+self.channel+mass_spectrum).Print();
       ## return the total extended pdf
+
       return self.workspace4fit_.pdf("model"+label+"_"+self.channel+mass_spectrum);
 
     ##### Method to fit data mlvj shape in the sideband -> first step for the background extraction of the shape
@@ -1922,7 +1923,7 @@ objName ==objName_before ):
 
         self.workspace4fit_.var("rrv_number%s_signal_region_%s_mlvj"%(label,self.channel)).setConstant(kTRUE);
 
-    ##### Counting of the events of each component in the signal region taking the lavel for the model
+    ##### Counting of the events of each component in the signal region taking the label for the model
     def get_mj_normalization_insignalregion(self, label):
         print "################## get mj normalization ",label," ################## ";
         rrv_mass_j = self.workspace4fit_.var("rrv_mass_j");
@@ -1951,6 +1952,8 @@ objName ==objName_before ):
         print "Events Number in sideband_high:%s"%(rrv_tmp.getVal()*sb_hiInt_val)
         print "Total Number in sidebands :%s"%(rrv_tmp.getVal()*(sb_loInt_val+sb_hiInt_val) )
         print "Ratio signal_region/sidebands :%s"%(signalInt_val/(sb_loInt_val+sb_hiInt_val) )
+	if 'TTbar' in label:
+		exit(0)
 
         ##### Save numbers in the output text file
         self.file_out.write( "\n%s++++++++++++++++++++++++++++++++++++"%(label) )
@@ -2034,15 +2037,17 @@ objName ==objName_before ):
         model_TTbar = self.get_TTbar_mj_Model("_TTbar_xww"+massscale);
         model_STop  = self.get_STop_mj_Model("_STop_xww"+massscale);
         model_VV    = self.get_VV_mj_Model("_VV_xww"+massscale);
-        ## only two parameters are fix, offset and width while the exp is floating , otherwise if shape different User1 or ErfExp everything is flaoting
+        ## only two parameters are fix, offset and width, while the exp is floating , otherwise if shape different User1 or ErfExp everything is flaoting
         model_WJets = self.get_WJets_mj_Model(label);
 
         ## Total Pdf and fit only in sideband 
         model_data = RooAddPdf("model_data_xww%s_%s_mj"%(massscale,self.channel),"model_data_xww%s_%s_mj"%(massscale,self.channel),RooArgList(model_WJets,model_VV,model_TTbar,model_STop));
+
         rfresult = model_data.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo,sb_hi") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2) );
         rfresult = model_data.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo,sb_hi") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2), RooFit.Minimizer("Minuit2") );
-	print "find this "
+
         rfresult.Print();
+
         rfresult.covarianceMatrix().Print();
         getattr(self.workspace4fit_,"import")(model_data);
 	
@@ -2344,11 +2349,13 @@ objName ==objName_before ):
         rdataset_mj.Print();
 
         ## make the extended model
-        model = self.make_Model(label,in_model_name);
+	model = self.make_Model(label,in_model_name);
         rfresult = model.fitTo(rdataset_mj,RooFit.Save(1), RooFit.Extended(kTRUE) );
         rfresult = model.fitTo(rdataset_mj,RooFit.Save(1), RooFit.SumW2Error(kTRUE) ,RooFit.Extended(kTRUE), RooFit.Minimizer("Minuit2") );
-        rfresult = model.fitTo(rdataset_mj,RooFit.Save(1), RooFit.SumW2Error(kTRUE) ,RooFit.Extended(kTRUE), RooFit.Minimizer("Minuit2") );
+        #rfresult = model.fitTo(rdataset_mj,RooFit.Save(1), RooFit.SumW2Error(kTRUE) ,RooFit.Extended(kTRUE), RooFit.Minimizer("Minuit2") );
         rfresult.Print();
+	#@#errorTTbar if 'TTbar' in label:
+	#	print self.workspace4fit_.var('rrv_number_TTbar_xww_el_mj').getError();exit(0)
 	
         ## Plot the result
         mplot = rrv_mass_j.frame(RooFit.Title(label+" fitted by "+in_model_name), RooFit.Bins(int(rrv_mass_j.getBins()/self.narrow_factor)) );
@@ -2472,20 +2479,6 @@ objName ==objName_before ):
         self.workspace4fit_.var("rrv_number"+label+"_"+self.channel+"_mj").setError(self.workspace4fit_.var("rrv_number"+label+"_"+self.channel+"_mj").getError()*self.workspace4fit_.var("rrv_scale_to_lumi"+label+"_"+self.channel).getVal() )
         self.workspace4fit_.var("rrv_number"+label+"_"+self.channel+"_mj").Print();
 
-        #datahist = rdataset_mj.binnedClone( rdataset_mj.GetName()+"_binnedClone",rdataset_mj.GetName()+"_binnedClone" )
-        #Nbin = rrv_mass_j.getBins()
-        #rresult_param = rfresult.floatParsFinal()
-        #nparameters =  rresult_param.getSize()
-        #ChiSquare = model.createChi2(datahist,RooFit.Extended(kTRUE),RooFit.DataError(RooAbsData.Poisson))
-        #chi_over_ndf= ChiSquare.getVal()/(Nbin - nparameters);
-     	#print "nPar=%s, chiSquare=%f/%f"%(nparameters, ChiSquare.getVal()*(Nbin - nparameters), (Nbin - nparameters) )
-
-        #datahist = rdataset_mj.binnedClone(rdataset_mj.GetName()+"_binnedClone",rdataset_mj.GetName()+"_binnedClone")
-        #Nbin = int(rrv_mass_j.getBins());
-        #nparameters = rfresult.floatParsFinal().getSize();
-        #ChiSquare = model.createChi2(datahist,RooFit.Extended(kTRUE),RooFit.DataError(RooAbsData.Poisson));
-        #chi_over_ndf= ChiSquare.getVal()/(Nbin - nparameters);
-	#print "nPar=%s, chiSquare=%s/%s"%(nparameters, ChiSquare.getVal()*(Nbin - nparameters), (Nbin - nparameters) );
 	
         ##### apply the correction of the mean and sigma from the ttbar control sample to the STop, TTbar and VV 
         par=parameters_list.createIterator();
@@ -2509,59 +2502,12 @@ objName ==objName_before ):
             param=par.Next()
 
     def IsGoodEvent(self,tree,label):
-       #@#always True for new trees -> only HP
-       if TString(label).Contains("STop") or TString(label).Contains("WJets") or TString(label).Contains("TTbar") or TString(label).Contains("VV") or TString(label).Contains("data"):
-	  keepEvent = True
-	  return keepEvent
-       #@#
-       keepEvent = False
-       
-       #if the category has a specific purity and a specific nbtag
-       if (self.wtagger_label.find('HP') != -1 or self.wtagger_label.find('LP') != -1) and (self.wtagger_label.find('0') != -1 or self.wtagger_label.find('1') != -1 or self.wtagger_label.find('2') != -1):
-          if tree.channel == self.categoryID: keepEvent = True
-         
-       #all HP nbtag categories == HP only
-       if self.wtagger_label.find('HP') != -1 and (self.wtagger_label.find('0') == -1 and self.wtagger_label.find('1') == -1 and self.wtagger_label.find('2') == -1):  
-          if self.channel == 'el':
-             if tree.channel == 0 or tree.channel == 6 or tree.channel == 8 or tree.channel == 10: keepEvent = True
-          elif self.channel == 'mu':   
-             if tree.channel == 1 or tree.channel == 7 or tree.channel == 9 or tree.channel == 11: keepEvent = True
+       	#@#always True for new trees -> only HP
+       	#if TString(label).Contains("STop") or TString(label).Contains("WJets") or TString(label).Contains("TTbar") or TString(label).Contains("VV") or TString(label).Contains("data"):
+	keepEvent = True
+	return keepEvent
+       	#@#
 
-       #all LP nbtag categories == LP only
-       if self.wtagger_label.find('LP') != -1 and (self.wtagger_label.find('0') == -1 and self.wtagger_label.find('1') == -1 and self.wtagger_label.find('2') == -1):  
-          if self.channel == 'el':
-             if tree.channel == 2 or tree.channel == 12 or tree.channel == 14 or tree.channel == 16: keepEvent = True
-          elif self.channel == 'mu':   
-             if tree.channel == 3 or tree.channel == 13 or tree.channel == 15 or tree.channel == 17: keepEvent = True
-          
-           
-       #all purities                     
-       if self.wtagger_label.find('ALLP') != -1:   
-          if self.channel == 'el':
-             #all purities but specific nbtag category
-             if self.wtagger_label.find('0') != -1:
-                if tree.channel == 6 or tree.channel == 12 or tree.channel == 18: keepEvent = True
-             elif self.wtagger_label.find('1') != -1:
-                if tree.channel == 8 or tree.channel == 14 or tree.channel == 20: keepEvent = True
-             elif self.wtagger_label.find('2') != -1:
-                if tree.channel == 10 or tree.channel == 16 or tree.channel == 22: keepEvent = True
-             #all purities and all nbtag categories
-             else:
-                if tree.channel == 0 or tree.channel == 2 or tree.channel == 6 or tree.channel == 12 or tree.channel == 8 or tree.channel == 14 or tree.channel == 10 or tree.channel == 16: keepEvent = True
-          elif self.channel == 'mu':
-             #all purities but specific nbtag category
-             if self.wtagger_label.find('0') != -1:
-                if tree.channel == 7 or tree.channel == 13: keepEvent = True
-             elif self.wtagger_label.find('1') != -1:
-                if tree.channel == 9 or tree.channel == 15: keepEvent = True
-             elif self.wtagger_label.find('2') != -1:
-                if tree.channel == 11 or tree.channel == 17: keepEvent = True
-             #all purities and all nbtag categories
-             else:
-                if tree.channel == 1 or tree.channel == 3 or tree.channel == 7 or tree.channel == 13 or tree.channel == 9 or tree.channel == 15 or tree.channel == 11 or tree.channel == 17: keepEvent = True
-          
-       
-       return keepEvent
                           
     ##### Method used to cycle on the events and for the dataset to be fitted
     def get_mj_and_mlvj_dataset(self,in_file_name, label, jet_mass ):# to get the shape of m_lvj,jet_mass="jet_mass_pr"
@@ -2610,6 +2556,7 @@ objName ==objName_before ):
         combData4fit = RooDataSet("combData4fit"+label+"_"+self.channel,"combData4fit"+label+"_"+self.channel,RooArgSet(rrv_mass_lvj, data_category, rrv_weight),RooFit.WeightVar(rrv_weight) );
 
         print "###### N entries: ", treeIn.GetEntries()
+
         hnum_4region=TH1D("hnum_4region"+label+"_"+self.channel,"hnum_4region"+label+"_"+self.channel,4,-1.5,2.5);# m_j -1: sb_lo; 0:signal_region; 1: sb_hi; 2:total
         hnum_2region=TH1D("hnum_2region"+label+"_"+self.channel,"hnum_2region"+label+"_"+self.channel,2,-0.5,1.5);# m_lvj 0: signal_region; 1: total
 
@@ -2680,28 +2627,35 @@ objName ==objName_before ):
                     data_category.setLabel("sideband");
                     combData.add(RooArgSet(rrv_mass_lvj,data_category),tmp_event_weight);
                     combData4fit.add(RooArgSet(rrv_mass_lvj,data_category),tmp_event_weight4fit);
+		#blind data
+		if 'data' not in label:
+		        if tmp_jet_mass >= self.mj_signal_min and tmp_jet_mass < self.mj_signal_max:
+		            rdataset_signal_region_mlvj.add( RooArgSet( rrv_mass_lvj ), tmp_event_weight );
+		            rdataset4fit_signal_region_mlvj.add( RooArgSet( rrv_mass_lvj ), tmp_event_weight4fit );
+		            
+		            data_category.setLabel("signal_region");
+		            combData.add(RooArgSet(rrv_mass_lvj,data_category),tmp_event_weight);
+		            combData4fit.add(RooArgSet(rrv_mass_lvj,data_category),tmp_event_weight4fit);
+		            hnum_2region.Fill(1,tmp_event_weight);
 
-                if tmp_jet_mass >= self.mj_signal_min and tmp_jet_mass < self.mj_signal_max:
-                    rdataset_signal_region_mlvj.add( RooArgSet( rrv_mass_lvj ), tmp_event_weight );
-                    rdataset4fit_signal_region_mlvj.add( RooArgSet( rrv_mass_lvj ), tmp_event_weight4fit );
-                    
-                    data_category.setLabel("signal_region");
-                    combData.add(RooArgSet(rrv_mass_lvj,data_category),tmp_event_weight);
-                    combData4fit.add(RooArgSet(rrv_mass_lvj,data_category),tmp_event_weight4fit);
-                    hnum_2region.Fill(1,tmp_event_weight);
-
-                    if treeIn.MWW >=self.mlvj_signal_min and treeIn.MWW <self.mlvj_signal_max:
-                        hnum_2region.Fill(0,tmp_event_weight);
+		            if treeIn.MWW >=self.mlvj_signal_min and treeIn.MWW <self.mlvj_signal_max:
+		                hnum_2region.Fill(0,tmp_event_weight);
 
                 if tmp_jet_mass >= self.mj_sideband_hi_min and tmp_jet_mass < self.mj_sideband_hi_max:
                     rdataset_sb_hi_mlvj.add( RooArgSet( rrv_mass_lvj ), tmp_event_weight );
                     rdataset4fit_sb_hi_mlvj.add( RooArgSet( rrv_mass_lvj ), tmp_event_weight4fit );
                     
                 rrv_mass_j.setVal( tmp_jet_mass );
-		#cut out signal region
-		if tmp_jet_mass <= 65 or tmp_jet_mass >= 105:
-                    rdataset_mj.add( RooArgSet( rrv_mass_j ), tmp_event_weight );
-                rdataset4fit_mj.add( RooArgSet( rrv_mass_j ), tmp_event_weight4fit );
+		#cut out data in signal region
+		if 'data' in label:
+			if tmp_jet_mass <= 65 or tmp_jet_mass >= 105:
+                    		rdataset_mj.add( RooArgSet( rrv_mass_j ), tmp_event_weight )
+                		rdataset4fit_mj.add( RooArgSet( rrv_mass_j ), tmp_event_weight4fit )
+		else:
+			rdataset_mj.add( RooArgSet( rrv_mass_j ), tmp_event_weight )
+	       		rdataset4fit_mj.add( RooArgSet( rrv_mass_j ), tmp_event_weight4fit )
+
+
 
                 if tmp_jet_mass >=self.mj_sideband_lo_min and tmp_jet_mass <self.mj_sideband_lo_max:
                     hnum_4region.Fill(-1,tmp_event_weight );
@@ -3035,11 +2989,12 @@ objName ==objName_before ):
                 params_list.append(self.workspace4limit_.var("Deco_WJets0_xww_sim_%s_%s_mlvj_13TeV_eig3"%(self.channel, self.wtagger_label)))
 
 
-                ### TTbar use exp
+                ### TTbar use exp #@#errorTTbar
                 if isTTbarFloating !=0:
                     print "##################### TTbar will float in the limit procedure + final plot ######################";
                     self.workspace4limit_.var("Deco_TTbar_xww_signal_region_%s_%s_mlvj_13TeV_eig0"%(self.channel, self.wtagger_label)).setError(self.shape_para_error_TTbar);
                     params_list.append(self.workspace4limit_.var("Deco_TTbar_xww_signal_region_%s_%s_mlvj_13TeV_eig0"%(self.channel, self.wtagger_label)));
+		    
 
                 ### VV use ExpTail:
                 if isVVFloating !=0:
