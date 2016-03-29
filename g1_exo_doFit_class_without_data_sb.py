@@ -488,17 +488,18 @@ objName ==objName_before ):
        return canvas
 
     #### just drawing canvas with no pull
-    def draw_canvas(self, in_obj,in_directory, in_file_name, is_range=0, logy=0, frompull=0, isalpha=0):
+    def draw_canvas(self, in_obj,in_directory, in_file_name, is_range=0, logy=0, frompull=0, isalpha=0, fix_axis=0):
 
         print "############### draw the canvas without pull ########################"
         cMassFit = self.get_canvas("cMassFit",isalpha)#TCanvas("cMassFit","cMassFit", 600,600);
 
-        if frompull and logy :
-            in_obj.GetYaxis().SetRangeUser(1e-2,in_obj.GetMaximum()/200)
-        elif not frompull and logy :
-            in_obj.GetYaxis().SetRangeUser(0.00001,in_obj.GetMaximum())
-        elif isalpha:    
-            in_obj.GetYaxis().SetRangeUser(0.00001,0.28)
+	if fix_axis == 0:
+		if frompull and logy :
+		    in_obj.GetYaxis().SetRangeUser(1e-2,in_obj.GetMaximum()/200)
+		elif not frompull and logy :
+		    in_obj.GetYaxis().SetRangeUser(0.00001,in_obj.GetMaximum())
+		elif isalpha:    
+		    in_obj.GetYaxis().SetRangeUser(0.00001,0.28)
 
         if is_range:
             h2=TH2D("h2","",100,400,1400,4,0.00001,4);
@@ -553,9 +554,8 @@ objName ==objName_before ):
         #cMassFit.SaveAs(rlt_file.Data());
 
         if logy:
-	    #if not isalpha:
-                #in_obj.GetYaxis().SetRangeUser(1e-3,in_obj.GetMaximum()*200);
-	    #in_obj.GetYaxis().SetRangeUser(1e-3,10e4);
+	    if not isalpha and fix_axis == 0:
+                in_obj.GetYaxis().SetRangeUser(1e-3,in_obj.GetMaximum()*200);
             cMassFit.SetLogy() ;
             cMassFit.Update();
             rlt_file.ReplaceAll(".root","_log.root");
@@ -595,7 +595,7 @@ objName ==objName_before ):
       return banner;
     
     #### draw canvas with plots with pull
-    def draw_canvas_with_pull(self, rrv_x, datahist, mplot, mplot_pull,ndof,parameters_list,in_directory, in_file_name, in_model_name="", show_constant_parameter=0, logy=0,ismj=0):# mplot + pull
+    def draw_canvas_with_pull(self, rrv_x, datahist, mplot, mplot_pull,ndof,parameters_list,in_directory, in_file_name, in_model_name="", show_constant_parameter=0, logy=0,ismj=0, fix_axis=0):# mplot + pull
 
         print "############### draw the canvas with pull ########################" 
 	#hist_ = datahist.createHistogram(rrv_x.GetName(),int(rrv_x.getBins()/self.narrow_factor))
@@ -738,18 +738,19 @@ objName ==objName_before ):
             string_file_name.Append("_"+in_model_name);
 
         if logy:
-            #mplot.GetYaxis().SetRangeUser(0.002,mplot.GetMaximum()*200);
-            pad2.SetLogy() ;
-            pad2.Update();
-            cMassFit.Update();
-            rlt_file.ReplaceAll(".root","_log.root");
-            cMassFit.SaveAs(rlt_file.Data());
-            rlt_file.ReplaceAll(".root",".pdf");
-            cMassFit.SaveAs(rlt_file.Data());
-            rlt_file.ReplaceAll(".pdf",".png");
-            cMassFit.SaveAs(rlt_file.Data());
+	    if fix_axis == 0:
+		    mplot.GetYaxis().SetRangeUser(0.002,mplot.GetMaximum()*200);
+	    pad2.SetLogy() ;
+	    pad2.Update();
+	    cMassFit.Update();
+	    rlt_file.ReplaceAll(".root","_log.root");
+	    #cMassFit.SaveAs(rlt_file.Data());
+	    rlt_file.ReplaceAll(".root",".pdf");
+	    cMassFit.SaveAs(rlt_file.Data());
+	    rlt_file.ReplaceAll(".pdf",".png");
+	    cMassFit.SaveAs(rlt_file.Data());
 
-        self.draw_canvas(mplot,in_directory,string_file_name.Data(),0,logy,1);
+        self.draw_canvas(mplot,in_directory,string_file_name.Data(),0,logy,1,0,fix_axis);
 
     def calculate_chi2(self,hist,rrv_x,mplot_orig,ndof,ismj):
 
@@ -1498,7 +1499,7 @@ objName ==objName_before ):
 	    mplot.GetXaxis().SetTitle(rrv_mass_lvj.GetTitle() + " (GeV)")
 	    mplot.GetYaxis().SetRangeUser(2e-3,2e5)
             #@#self.draw_canvas_with_pull( rrv_mass_lvj,datahist,mplot, mplot_pull,ndof,parameters_list,"%s/m_lvj_fitting/"%(self.plotsDir), "m_lvj_sb_lo%s"%(label),"",1,1)
-	    self.draw_canvas_with_pull( rrv_mass_lvj,datahist,mplot, mplot_pull,ndof,parameters_list,"%s/ExtraPlots/"%(self.plotsDir), "m_lvj_sb_lo%s"%(label),"",1,1)
+	    self.draw_canvas_with_pull( rrv_mass_lvj,datahist,mplot, mplot_pull,ndof,parameters_list,"%s/ExtraPlots/"%(self.plotsDir), "m_lvj_sb_lo%s"%(label),"",1,1,0,1)
 	    
 
         #### Decorrelate the parameters in order to have a proper shape in the workspace
@@ -2597,7 +2598,7 @@ objName ==objName_before ):
             tmp_jet_mass=getattr(treeIn, jet_mass);
 
             self.isGoodEvent = 0;   
-            if self.IsGoodEvent(treeIn,label) and treeIn.issignal and treeIn.MWW> rrv_mass_lvj.getMin() and treeIn.MWW<rrv_mass_lvj.getMax() and tmp_jet_mass>rrv_mass_j.getMin() and tmp_jet_mass<rrv_mass_j.getMax() :
+            if self.IsGoodEvent(treeIn,label) and treeIn.MWW> rrv_mass_lvj.getMin() and treeIn.MWW<rrv_mass_lvj.getMax() and tmp_jet_mass>rrv_mass_j.getMin() and tmp_jet_mass<rrv_mass_j.getMax() :
               self.isGoodEvent = 1;  
  
 

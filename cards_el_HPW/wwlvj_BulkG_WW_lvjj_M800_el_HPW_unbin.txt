@@ -10,18 +10,18 @@ shapes VV_xww     CMS_xww_el1JHPW  wwlvj_BulkG_WW_lvjj_M800_el_HPW_workspace.roo
 shapes data_obs   CMS_xww_el1JHPW  wwlvj_BulkG_WW_lvjj_M800_el_HPW_workspace.root workspace4limit_:$PROCESS_xww_el_HPW
 --------------- 
 bin CMS_xww_el1JHPW 
-observation 283.00 
+observation 180.00 
 ------------------------------
 bin CMS_xww_el1JHPW CMS_xww_el1JHPW CMS_xww_el1JHPW CMS_xww_el1JHPW CMS_xww_el1JHPW
 process BulkWW_xww WJets_xww TTbar_xww STop_xww VV_xww
 process -1 1 2 3 4
-rate 1.60634 151.556 98.815 14.961 14.505 
+rate 0.09163 93.270 66.156 5.144 3.927 
 -------------------------------- 
 lumi_13TeV lnN 1.046 - 1.046 1.046 1.046
 CMS_xww_XS_BulkG_WW_13TeV lnN 1.110 - - - -
 CMS_xww_XS_STop_13TeV lnN - - - 1.050 -
 CMS_xww_XS_VV_13TeV lnN - - - - 1.030
-CMS_xww_WJ_norm_el_HPW_13TeV lnN - 1.070 - - -
+CMS_xww_WJ_norm_el_HPW_13TeV lnN - 1.123 - - -
 CMS_xww_Top_norm_el_HPW_13TeV lnN - - 1.084 1.084 -
 CMS_eff_vtag_tau21_sf_13TeV lnN 1.126/0.874 - - - 1.126/0.874
 #CMS_eff_vtag_model_13TeV lnN 1.000 - - - 1.000
