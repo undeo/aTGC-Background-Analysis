@@ -13,7 +13,7 @@ from optparse import OptionParser
 import CMS_lumi, tdrstyle
 from array import array
 
-from ROOT import gROOT, TPaveLabel, gStyle, gSystem, TGaxis, TStyle, TLatex, TString, TF1,TFile,TLine, TLegend, TH1D,TH2D,THStack,TChain, TCanvas, TMatrixDSym, TMath, TText, TPad, RooFit, RooArgSet, RooArgList, RooArgSet, RooAbsData, RooAbsPdf, RooAddPdf, RooWorkspace, RooExtendPdf,RooCBShape, RooLandau, RooFFTConvPdf, RooGaussian, RooBifurGauss, RooArgusBG,RooDataSet, RooExponential,RooBreitWigner, RooVoigtian, RooNovosibirsk, RooRealVar,RooFormulaVar, RooDataHist, RooHist,RooCategory, RooChebychev, RooSimultaneous, RooGenericPdf,RooConstVar, RooKeysPdf, RooHistPdf, RooEffProd, RooProdPdf, TIter, kTRUE, kFALSE, kGray, kRed, kDashed, kGreen,kAzure, kOrange, kBlack,kBlue,kYellow,kCyan, kMagenta, kWhite
+from ROOT import gROOT, TPaveLabel, gStyle, gSystem, TGaxis, TStyle, TLatex, TString, TF1,TFile,TLine, TLegend, TH1D,TH2D,THStack,TChain, TCanvas, TMatrixDSym, TMath, TText, TPad, RooFit, RooArgSet, RooArgList, RooArgSet, RooAbsData, RooAbsPdf, RooAbsReal, RooAddPdf, RooWorkspace, RooExtendPdf,RooCBShape, RooLandau, RooFFTConvPdf, RooGaussian, RooBifurGauss, RooArgusBG,RooDataSet, RooExponential,RooBreitWigner, RooVoigtian, RooNovosibirsk, RooRealVar,RooFormulaVar, RooDataHist, RooHist,RooCategory, RooChebychev, RooSimultaneous, RooGenericPdf,RooConstVar, RooKeysPdf, RooHistPdf, RooEffProd, RooProdPdf, TIter, kTRUE, kFALSE, kGray, kRed, kDashed, kGreen,kAzure, kOrange, kBlack,kBlue,kYellow,kCyan, kMagenta, kWhite
 
 
 ############################################
@@ -498,8 +498,6 @@ objName ==objName_before ):
 		    in_obj.GetYaxis().SetRangeUser(1e-2,in_obj.GetMaximum()/200)
 		elif not frompull and logy :
 		    in_obj.GetYaxis().SetRangeUser(0.00001,in_obj.GetMaximum())
-		elif isalpha:    
-		    in_obj.GetYaxis().SetRangeUser(0.00001,0.28)
 
         if is_range:
             h2=TH2D("h2","",100,400,1400,4,0.00001,4);
@@ -565,59 +563,18 @@ objName ==objName_before ):
             rlt_file.ReplaceAll(".pdf",".png");
             cMassFit.SaveAs(rlt_file.Data());
 
-    #### in order to make the banner on the plots
-    def banner4Plot(self, iswithpull=0):
-      print "############### draw the banner ########################"
-
-      if iswithpull:
-       if self.channel=="el":
-#        banner = TLatex(0.3,0.96,("CMS Preliminary, %.1f fb^{-1} at #sqrt{s} = 8 TeV, W#rightarrow e #nu "%(self.GetLumi())));
-        banner = TLatex(0.18,0.96,"CMS                                             L = 19.7 fb^{-1} at #sqrt{s} = 8 TeV");
-       elif self.channel=="mu":
-#        banner = TLatex(0.3,0.96,("CMS Preliminary, %.1f fb^{-1} at #sqrt{s} = 8 TeV, W#rightarrow #mu #nu "%(self.GetLumi())));
-        banner = TLatex(0.18,0.96,"CMS                                             L = 19.7 fb^{-1} at #sqrt{s} = 8 TeV");
-       elif self.channel=="em":
-#        banner = TLatex(0.3,0.96,("CMS Preliminary, %.1f fb^{-1} at #sqrt{s} = 8 TeV, W#rightarrow #mu,e #nu "%(self.GetLumi())));
-        banner = TLatex(0.18,0.96,"CMS                                             L = 19.7 fb^{-1} at #sqrt{s} = 8 TeV");
-       banner.SetNDC(); banner.SetTextSize(0.041);
-      else:
-       if self.channel=="el":
-#        banner = TLatex(0.22,0.96,("CMS Preliminary, %.1f fb^{-1} at #sqrt{s} = 8 TeV, W#rightarrow e #nu "%(self.GetLumi())));
-        banner = TLatex(0.18,0.96,"CMS                                         L = 19.7 fb^{-1} at #sqrt{s} = 8 TeV");
-       if self.channel=="mu":
-#        banner = TLatex(0.22,0.96,("CMS Preliminary, %.1f fb^{-1} at #sqrt{s} = 8 TeV, W#rightarrow #mu #nu "%(self.GetLumi())));
-        banner = TLatex(0.18,0.96,"CMS                                         L = 19.7 fb^{-1} at #sqrt{s} = 8 TeV");
-       if self.channel=="em":
-#        banner = TLatex(0.22,0.96,("CMS Preliminary, %.1f fb^{-1} at #sqrt{s} = 8 TeV, W#rightarrow #mu,e #nu "%(self.GetLumi())));
-        banner = TLatex(0.18,0.96,"CM                                          L = 19.7 fb^{-1} at #sqrt{s} = 8 TeV");
-       banner.SetNDC(); banner.SetTextSize(0.033);
-                                                                                                         
-      return banner;
-    
     #### draw canvas with plots with pull
     def draw_canvas_with_pull(self, rrv_x, datahist, mplot, mplot_pull,ndof,parameters_list,in_directory, in_file_name, in_model_name="", show_constant_parameter=0, logy=0,ismj=0, fix_axis=0):# mplot + pull
 
         print "############### draw the canvas with pull ########################" 
-	#hist_ = datahist.createHistogram(rrv_x.GetName(),int(rrv_x.getBins()/self.narrow_factor))
-        #chi2_ = self.calculate_chi2(datahist,rrv_x,mplot,ndof,ismj)
 	#@#mplot.GetXaxis().SetTitle(rrv_x.GetTitle() + " (GeV)")
 	mplot.GetXaxis().SetTitle("")
-	#mplot.GetXaxis().SetTitleOffset(1.1);
-        #mplot.GetYaxis().SetTitleOffset(1.3);
-        #mplot.GetXaxis().SetTitleSize(0.055);
-        #mplot.GetYaxis().SetTitleSize(0.055);
-        #mplot.GetXaxis().SetLabelSize(0.045);
-        #mplot.GetYaxis().SetLabelSize(0.045);
         mplot.GetYaxis().SetTitleSize(0.07)
         mplot.GetYaxis().SetTitleOffset(0.9)
         mplot.GetYaxis().SetLabelSize(0.06)
 	mplot.GetXaxis().SetLabelSize(0);
-        #mplot_pull.GetXaxis().SetLabelSize(0.14);
-        #mplot_pull.GetYaxis().SetLabelSize(0.14);
-        #mplot_pull.GetYaxis().SetTitleSize(0.15);
-        #mplot_pull.GetYaxis().SetNdivisions(205);
 	
-        cMassFit = self.get_canvas("cMassFit")#TCanvas("cMassFit","cMassFit", 600,600);
+        cMassFit = self.get_canvas("cMassFit")
         # if parameters_list is empty, don't draw pad3
         par_first=parameters_list.createIterator();
         par_first.Reset();
@@ -640,35 +597,12 @@ objName ==objName_before ):
    	 pad1.SetRightMargin(0.1)
    	 pad1.SetTopMargin(0)
    	 pad1.SetBottomMargin(0.4)   
-	 #pad1.SetRightMargin(0.05)
-	 #pad2.SetRightMargin(0.05)
          pad1.Draw();
          pad2.Draw();
                                                                                                                                                                               
         pad2.cd();
 	
-	'''	
-	if ismj:
-	 pt = ROOT.TPaveText(0.6243719,0.4080919,0.8756281,0.547952,"NDC")
-	 pt.SetTextSize(0.03746254)
-	else:
-	 pt = ROOT.TPaveText(0.5175879,0.7152847,0.8027638,0.8551449,"NDC")
-	 pt.SetTextSize(0.054)
-	 
-	pt.SetTextFont(62)	
-	pt.SetTextAlign(12)
-	pt.SetFillColor(0)
-	pt.SetBorderSize(0)
-	pt.SetFillStyle(0)
-	text = pt.AddText("#chi^2/d.o.f = %.2f/%i = %.2f" %(chi2_[0],chi2_[1],chi2_[0]/chi2_[1]))
-	text.SetTextFont(62)
-	'''
-	
         mplot.Draw();
-	#pt.Draw()
-
-        #banner = self.banner4Plot(1);
-        #banner.Draw();
 
         pad1.cd();
         mplot_pull.Draw("AP");
@@ -766,21 +700,12 @@ objName ==objName_before ):
 	  hist.weightError(RooAbsData.SumW2)
 	  print x,y,bins_,hist.get(bins_).getRealValue(rrv_x.GetName()),hist.weight(),hist.weightError(RooAbsData.SumW2)
 	  if hist.weight() != 0: pulls.append(y)
-	  #print x,y,hist.GetBinCenter(bins_),hist.GetBinContent(bins_)
-          #if not(ismj) and y != 0 and TMath.Abs(y) < 4: pulls.append(y)
-	  #elif ismj and y != 0 and (x < 65 or x > 135):
-	  # pulls.append(y) 
-          # bins+=1
-	  #else: print "Bin %f is empty!" %x 
 	  bins_+=1
 	  
 	chi2 = 0
 	for p in pulls:
 	 chi2+=(p*p)
 	 
-	#if ismj:
-	# ndof = ndof - (hpull.GetN()-bins) 
-	# print hpull.GetN(),bins,ndof
 	print "Chi2/ndof = %f/%f = %f" %(chi2,ndof,chi2/ndof)
 	return chi2,ndof
 	       
@@ -822,21 +747,6 @@ objName ==objName_before ):
    	#gt.GetXaxis().SetNdivisions(505)
 	hpull.SetHistogram(gt)
 	return hpull
-        #mplot_pull = rrv_x.frame(RooFit.Title("Pull Distribution"), RooFit.Bins(int(rrv_x.getBins()/self.narrow_factor)));
-        #medianLine = TLine(rrv_x.getMin(),0.,rrv_x.getMax(),0); medianLine.SetLineWidth(2); medianLine.SetLineColor(kRed);
-        #mplot_pull.addObject(medianLine);
-        #mplot_pull.addPlotable(hpull,"P");
-        #mplot_pull.SetTitle("");
-        #mplot_pull.GetXaxis().SetTitle("");
-        #mplot_pull.GetYaxis().SetRangeUser(-5,5);
-        #mplot_pull.GetYaxis().SetTitleSize(0.10);
-        #mplot_pull.GetYaxis().SetLabelSize(0.10);
-        #mplot_pull.GetXaxis().SetTitleSize(0.10);
-        #mplot_pull.GetXaxis().SetLabelSize(0.10);
-        #mplot_pull.GetYaxis().SetTitleOffset(0.40);
-        #mplot_pull.GetYaxis().SetTitle("#frac{Data-Fit}{#sigma_{data}}");
-        #mplot_pull.GetYaxis().CenterTitle();
-
         return mplot_pull;
 
     def getData_PoissonInterval(self,data_obs,mplot):
@@ -1012,14 +922,6 @@ objName ==objName_before ):
             rrv_alpha2_CB = RooRealVar("rrv_alpha2_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_alpha2_CB"+label+"_"+self.channel+"_"+self.wtagger_label,g_alpha2.Eval(int(options.mass)));
             rrv_n2_CB     = RooRealVar("rrv_n2_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_n2_CB"+label+"_"+self.channel+"_"+self.wtagger_label,g_n2.Eval(int(options.mass)));
             rrv_alpha1_CB = RooRealVar("rrv_alpha1_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_alpha1_CB"+label+"_"+self.channel+"_"+self.wtagger_label,g_alpha1.Eval(int(options.mass)));
-
-            #set parameters of the CB to the interpolated value
-#            rrv_mean_CB.setVal(g_mean.Eval(int(options.mass))); 
-#            rrv_sigma_CB.setVal(g_sigma.Eval(int(options.mass))); 
-#            rrv_n1_CB.setVal(g_n1.Eval(int(options.mass))); 
-#            rrv_n2_CB.setVal(g_n2.Eval(int(options.mass))); 
-#            rrv_alpha1_CB.setVal(g_alpha1.Eval(int(options.mass))); 
-#            rrv_alpha2_CB.setVal(g_alpha2.Eval(int(options.mass))); 
 
             rrv_mean_CB.Print()
             rrv_sigma_CB.Print()
@@ -1599,10 +1501,6 @@ objName ==objName_before ):
     def get_WJets_mlvj_correction_sb_lo_to_signal_region(self,label, mlvj_model):
 
         print" ############# get the extrapolation function alpha from MC : ",label,"   ",mlvj_model," ###############";          
-        #tdrstyle.setTDRStyle()
-        #tmp_Style.SetPadRightMargin(0.08);
-        #tmp_Style.SetPadTickY(0);
-        #tmp_Style.cd();
 
         ### take input var and datasets from 4fit collection --> mc not scaled to lumi --> just a shape here 
         rrv_x = self.workspace4fit_.var("rrv_mass_lvj");
@@ -1815,6 +1713,7 @@ objName ==objName_before ):
             self.draw_canvas_with_pull( rrv_x,datahist,mplot_signal_region, mplot_pull_signal_region,ndof,parameters_list,"%s/other/"%(self.plotsDir), "m_lvj%s_signal_region_sim"%(label),"",1,1);
 
         ### Total plot shape in sb_lo, sr and alpha
+	alpha_norm_factor = 5e-3
         model_pdf_sb_lo_WJets.plotOn(mplot,RooFit.Name("Sideband"));
         model_pdf_signal_region_WJets.plotOn(mplot, RooFit.LineColor(kRed), RooFit.Name("Signal Region"));
         correct_factor_pdf_deco.plotOn(mplot, RooFit.LineColor(kBlack),RooFit.Name("#alpha") );
@@ -1882,9 +1781,9 @@ objName ==objName_before ):
         mplot.addObject(self.leg);
         
         ## set the Y axis in arbitrary unit 
-        if self.signal_sample=="ggH600" or self.signal_sample=="ggH700": tmp_y_max=0.25
-        else: tmp_y_max=0.28
-        mplot.GetYaxis().SetRangeUser(0,tmp_y_max);
+	tmp_y_max=0.125
+	tmp_y_min=1e-5
+        mplot.GetYaxis().SetRangeUser(tmp_y_min,tmp_y_max);
 
         #### Draw another axis with the real value of alpha
         model_pdf_sb_lo_WJets.getVal(RooArgSet(rrv_x))
@@ -1895,7 +1794,7 @@ objName ==objName_before ):
         tmp_alpha_scale = tmp_alpha_ratio/tmp_alpha_pdf;
 
         #add alpha scale axis
-        axis_alpha=TGaxis( rrv_x.getMax(), 0, rrv_x.getMax(), tmp_y_max, 0.1, tmp_y_max*tmp_alpha_scale, 510, "+L" ); #-,-+,+,L
+        axis_alpha=TGaxis( rrv_x.getMax(), 0, rrv_x.getMax(), tmp_y_max, tmp_y_min * tmp_alpha_scale, tmp_y_max*tmp_alpha_scale, 510, "+L" ); #-,-+,+,L
         axis_alpha.SetTitle("#alpha");
         axis_alpha.SetTitleOffset(0.65);
         axis_alpha.SetTitleSize(0.05);
@@ -2019,11 +1918,6 @@ objName ==objName_before ):
          rrv_TTbarmassdn = self.workspace4fit_.var("rrv_number_dataset_signal_region_TTbar_xww_massdn_%s_mj"%(self.channel));
          self.TTbar_normlization_uncertainty_from_jet_mass=( TMath.Abs(rrv_TTbarmassup.getVal()-rrv_TTbar.getVal())+TMath.Abs(rrv_TTbarmassdn.getVal()-rrv_TTbar.getVal() ) )/2./rrv_TTbar.getVal();
 
-        #rrv_VV = self.workspace4fit_.var("rrv_number_dataset_signal_region_VV_xww_%s_mj"%(self.channel));
-        #if self.workspace4fit_.var("rrv_number_dataset_signal_region_VV_xww_massup_%s_mj"%(self.channel)) and self.workspace4fit_.var("rrv_number_dataset_signal_region_VV_xww_massdn_%s_mj"%(self.channel)):
-        # rrv_VVmassup = self.workspace4fit_.var("rrv_number_dataset_signal_region_VV_xww_massup_%s_mj"%(self.channel));
-        # rrv_VVmassdn = self.workspace4fit_.var("rrv_number_dataset_signal_region_VV_xww_massdn_%s_mj"%(self.channel));
-        # self.VV_normlization_uncertainty_from_jet_mass=( TMath.Abs(rrv_VVmassup.getVal()-rrv_VV.getVal())+TMath.Abs(rrv_VVmassdn.getVal()-rrv_VV.getVal() ) )/2./rrv_VV.getVal();
 
     #### make the mj sideband fit on data ti get the Wjets normaliztion 
     def fit_WJetsNormalization_in_Mj_signal_region(self,label,massscale=""): 
