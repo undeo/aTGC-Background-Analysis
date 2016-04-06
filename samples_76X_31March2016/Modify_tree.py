@@ -31,6 +31,7 @@ def prepare_trees_with_cuts(filenameOut = "Output.root", list_of_trees = [""], i
   if is_data:
     var_weight = array('f',[1])
     branch_weight = newtree.Branch("totEventWeight2", var_weight, "weight")
+    var_weight[0] = 1
   
   ##fill new branches  
   used_events = 0
@@ -43,14 +44,16 @@ def prepare_trees_with_cuts(filenameOut = "Output.root", list_of_trees = [""], i
   	if oldtree.jet_pt>200 and oldtree.jet_tau2tau1<0.6 and oldtree.Mjpruned<150\
 	and oldtree.Mjpruned>40 and oldtree.W_pt>200 and abs(oldtree.deltaR_LeptonWJet)>math.pi/2\
 	and abs(oldtree.deltaPhi_WJetMet)>2 and abs(oldtree.deltaPhi_WJetWlep)>2:
-      		used_events += 1
       		if used_events%1000 == 0:
 			print str(used_events) + " / " + str(i) + " / " + str(nEntries)
       		use_event = True
       
+	if channel == 'ele': 
+		print oldtree.bit_HLT_Ele_105
+		if not oldtree.bit_HLT_Ele_105:
+			use_event = False
     	if use_event==True:
-      		if is_data:
-			var_weight[0] = 1     
+      		used_events += 1    
 		newtree.Fill()
 
   print str(used_events) + " / " + str(nEntries)
@@ -65,7 +68,8 @@ def prepare_trees_with_cuts(filenameOut = "Output.root", list_of_trees = [""], i
 
 
 
-chan = ["ele", "mu"]
+#chan = ["ele", "mu"]
+chan = ['ele']
 for ch in chan:
   ###merge and rename trees
   data_list_of_trees = ["data-RunD_%s.root"%(ch)]
