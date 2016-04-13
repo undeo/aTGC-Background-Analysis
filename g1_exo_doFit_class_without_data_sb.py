@@ -24,7 +24,7 @@ parser = OptionParser()
 
 parser.add_option('-c', '--channel',action="store",type="string",dest="channel",default="el")
 parser.add_option('--sample', action="store",type="string",dest="sample",default="BulkG_WW_lvjj")
-parser.add_option('--mass', action="store",type="float",dest="mass",default="800")
+parser.add_option('--mass', action="store",type="float",dest="mass",default="2000")
 parser.add_option('-s','--simple', action='store', dest='simple', default=False, help='pre-limit in simple mode')
 parser.add_option('-b', action='store_true', dest='noX', default=True, help='no X11 windows')
 parser.add_option('--inPath', action="store",type="string",dest="inPath",default="./")
@@ -454,7 +454,7 @@ objName ==objName_before ):
     def get_canvas(self,cname,isalpha=False):
 
        #tdrstyle.setTDRStyle()
-       CMS_lumi.lumi_13TeV = "2.09 fb^{-1}"
+       CMS_lumi.lumi_13TeV = "2.3 fb^{-1}"
        CMS_lumi.writeExtraText = 1
        CMS_lumi.extraText = "preliminary"
 
@@ -991,8 +991,8 @@ objName ==objName_before ):
         if in_model_name == "DoubleCB_v1":
             label_tstring=TString(label);
             print "########### Double CB for Bulk graviton mlvj ############"                                                                  
-            if label_tstring.Contains("M800") and (label_tstring.Contains("RS1G_WW") or label_tstring.Contains("BulkG_WW") or label_tstring.Contains("Wprime_WZ")):
-                    rrv_mean_CB  = RooRealVar("rrv_mean_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_mean_CB"+label+"_"+self.channel+"_"+self.wtagger_label,820,790,880);
+            if label_tstring.Contains("M2000") and (label_tstring.Contains("RS1G_WW") or label_tstring.Contains("BulkG_WW") or label_tstring.Contains("Wprime_WZ")):
+                    rrv_mean_CB  = RooRealVar("rrv_mean_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_mean_CB"+label+"_"+self.channel+"_"+self.wtagger_label,2000,1900,2100);
                     rrv_sigma_CB = RooRealVar("rrv_sigma_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_sigma_CB"+label+"_"+self.channel+"_"+self.wtagger_label,50,40,70);
                     rrv_n1_CB     = RooRealVar("rrv_n1_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_n1_CB"+label+"_"+self.channel+"_"+self.wtagger_label, 15.,5.,25.);
                     rrv_alpha2_CB = RooRealVar("rrv_alpha2_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_alpha2_CB"+label+"_"+self.channel+"_"+self.wtagger_label,1.64,1.,1.9);
@@ -1050,8 +1050,8 @@ objName ==objName_before ):
         if in_model_name == "ExpN":
             
             print "########### ExpN funtion for W+jets mlvj ############"
-            rrv_c_ExpN = RooRealVar("rrv_c_ExpN"+label+"_"+self.channel,"rrv_c_ExpN"+label+"_"+self.channel,-3e-3,-1e-1,-1e-5);
-	    rrv_n_ExpN = RooRealVar("rrv_n_ExpN"+label+"_"+self.channel,"rrv_n_ExpN"+label+"_"+self.channel, 1e3, 0, 1e4);
+            rrv_c_ExpN = RooRealVar("rrv_c_ExpN"+label+"_"+self.channel,"rrv_c_ExpN"+label+"_"+self.channel,-2e-3,-1e-1,-1e-5);
+	    rrv_n_ExpN = RooRealVar("rrv_n_ExpN"+label+"_"+self.channel,"rrv_n_ExpN"+label+"_"+self.channel, 4e3, 0, 1e4);
 	    if rrv_x.getMin() == 700:
 	       rrv_n_ExpN = RooRealVar("rrv_n_ExpN"+label+"_"+self.channel,"rrv_n_ExpN"+label+"_"+self.channel, 0, -10000, 10000);	       
             #if(ismc==1):
@@ -1939,26 +1939,37 @@ objName ==objName_before ):
 
         ## Total Pdf and fit only in sideband 
         model_data = RooAddPdf("model_data_xww%s_%s_mj"%(massscale,self.channel),"model_data_xww%s_%s_mj"%(massscale,self.channel),RooArgList(model_WJets,model_VV,model_TTbar,model_STop))
-	#@#add uncertainty on ttbar
+	#@#let ttbar float with gaussian constraint
 
-	mean 		= RooRealVar('ttbar_norm_mean','ttbar_norm_mean',self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).getVal())
+	#@#save value of rrv_number_TTbar from TTbar-only-fit
+	if '_WJets0_' in label:
+		meanval		= RooRealVar('meanval','meanval',self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).getVal())
+		ttbar_error	= RooRealVar('ttbar_error','ttbar_error',self.workspace4fit_.var('rrv_number_TTbar_xww%s_%s_mj'%(massscale,self.channel)).getError())
+		getattr(self.workspace4fit_,'import')(meanval)
+		getattr(self.workspace4fit_,'import')(ttbar_error)
+
+	mean 		= RooRealVar('ttbar_norm_mean','ttbar_norm_mean',self.workspace4fit_.var('meanval').getVal())
 	sigma 		= RooRealVar('ttbar_norm_sigma','ttbar_norm_sigma',0.055 * mean.getVal())
 	ttbar_gauss	= RooGaussian("ttbar_gauss_uncert","ttbar_gauss_uncert",self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)),mean,sigma)
 	ttbar_gauss.Print()
 	
 	model_data4fit	= RooProdPdf("model_data_xww%s_%s_mj_4fit"%(massscale,self.channel),"model_data_xww%s_%s_mj_4fit"%(massscale,self.channel),model_data,ttbar_gauss)
+	#@#set value and error of rrv_number_ttbar to prefit
+	self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setVal(self.workspace4fit_.var('meanval').getVal())
+	self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setError(self.workspace4fit_.var('ttbar_error').getVal())
+	self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setRange(0,1e4)
 	#@#
-
 	self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setConstant(kFALSE)
         rfresult = model_data4fit.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo,sb_hi") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2) );
         rfresult = model_data4fit.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo,sb_hi") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2), RooFit.Minimizer("Minuit2") );
 	self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setConstant(kTRUE)
+        getattr(self.workspace4fit_,"import")(model_data);
 
         rfresult.Print();
-	print self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).getError() / self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).getVal()
+	print 'realtive error of ttbar-normalization: ' + str(self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).getError() / self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).getVal())
 
         rfresult.covarianceMatrix().Print();
-        getattr(self.workspace4fit_,"import")(model_data);
+	print mean.getVal()
 	
 
         ## Total numver of event 
@@ -2107,13 +2118,18 @@ objName ==objName_before ):
         signalInt = model_WJets.createIntegral(RooArgSet(rrv_mass_j),RooArgSet(rrv_mass_j),("signal_region"));
         fullInt_val = fullInt.getVal()
         signalInt_val = signalInt.getVal()/fullInt_val
+
         ## take the value from the fit (normalization) and multiply it from the ratio of the integrals
         rrv_number_WJets_in_mj_signal_region_from_fitting = RooRealVar("rrv_number%s_in_mj_signal_region_from_fitting_%s"%(label,self.channel),"rrv_number%s_in_mj_signal_region_from_fitting_%s"%(label,self.channel),self.workspace4fit_.var("rrv_number%s_%s_mj"%(label,self.channel)).getVal()*signalInt_val);
+	#@#
+	rrv_number_WJets_in_mj_sb_region_from_fitting = RooRealVar("rrv_number%s_in_mj_sb_region_from_fitting_%s"%(label,self.channel),"rrv_number%s_in_mj_sb_region_from_fitting_%s"%(label,self.channel),self.workspace4fit_.var("rrv_number%s_%s_mj"%(label,self.channel)).getVal()*(1-signalInt_val)) 
+	#@#
 
         #### Error on the normalization --> from a dedicated function taking into account shape uncertainty
         rrv_number_WJets_in_mj_signal_region_from_fitting.setError( Calc_error_extendPdf(rdataset_data_mj, model_WJets, rfresult,"signal_region") );
         print "########## error on the normalization due to shape + norm = %s"%(rrv_number_WJets_in_mj_signal_region_from_fitting.getError());
         getattr(self.workspace4fit_,"import")(rrv_number_WJets_in_mj_signal_region_from_fitting);
+	getattr(self.workspace4fit_,"import")(rrv_number_WJets_in_mj_sb_region_from_fitting);
         rrv_number_WJets_in_mj_signal_region_from_fitting.Print();
 
     ### Define the Extended Pdf for and mlvj fit giving: label, fit model name, list constraint, range to be fitted and do the decorrelation
@@ -2177,12 +2193,6 @@ objName ==objName_before ):
 		self.draw_canvas_with_pull( rrv_mass_lvj, datahist,mplot, mplot_pull,ndof,parameters_list,"%s/ExtraPlots/"%(self.plotsDir), in_file_name,"m_lvj"+in_range+mlvj_model, show_constant_parameter, 1)
 
 
-        '''
-        for i in range(datahist.numEntries()):
-	 datahist.get(i)
-	 datahist.weightError(RooAbsData.SumW2)
-         print "Bin %i x=%f w = %f we = %f"%(i,datahist.get(i).getRealValue("rrv_mass_lvj"),datahist.weight(),datahist.weightError(RooAbsData.SumW2))
-        '''
          
         ## if the shape parameters has to be decorrelated
         if deco :
@@ -2412,12 +2422,10 @@ objName ==objName_before ):
 
     def IsGoodEvent(self,tree,label):
        	#@#always True for new trees -> only HP
-       	#if TString(label).Contains("STop") or TString(label).Contains("WJets") or TString(label).Contains("TTbar") or TString(label).Contains("VV") or TString(label).Contains("data"):
 	keepEvent = True
 	return keepEvent
        	#@#
-
-                          
+              
     ##### Method used to cycle on the events and for the dataset to be fitted
     def get_mj_and_mlvj_dataset(self,in_file_name, label, jet_mass ):# to get the shape of m_lvj,jet_mass="jet_mass_pr"
 
@@ -2468,55 +2476,39 @@ objName ==objName_before ):
 
         hnum_4region=TH1D("hnum_4region"+label+"_"+self.channel,"hnum_4region"+label+"_"+self.channel,4,-1.5,2.5);# m_j -1: sb_lo; 0:signal_region; 1: sb_hi; 2:total
         hnum_2region=TH1D("hnum_2region"+label+"_"+self.channel,"hnum_2region"+label+"_"+self.channel,2,-0.5,1.5);# m_lvj 0: signal_region; 1: total
-
-        if self.channel=="el":
-            tmp_lumi=2093.92;
-        elif self.channel == "mu":
-            tmp_lumi=2093.92;
-        else:
-            tmp_lumi=2093.92;
         
+
         for i in range(treeIn.GetEntries()):
+
             if i % 10000 == 0: print "iEntry: ",i
             treeIn.GetEntry(i);
-
+	    	
             if i==0:
-	       #@#
-	       if TString(label).Contains("_STop") or TString(label).Contains("_WJets") or TString(label).Contains("_TTbar") or TString(label).Contains("_VV"):
-	          tmp_scale_to_lumi = treeIn.lumiweight
-	       else:
-               	  tmp_scale_to_lumi = treeIn.lumiweight*tmp_lumi
-	       #@#
-	       #tmp_scale_to_lumi = treeIn.lumiweight*tmp_lumi       
-       
+		if TString(label).Contains('Bulk'):
+       			tmp_scale_to_lumi = treeIn.lumiweight
+		if TString(label).Contains("_STop") or TString(label).Contains("_WJets") or TString(label).Contains("_TTbar") or TString(label).Contains("_VV"):
+      			#tmp_scale_to_lumi = treeIn.totEventWeight2 / (treeIn.puweight*(treeIn.genweight/abs(treeIn.genweight)))
+			tmp_scale_to_lumi = 1
+		if TString(label).Contains('data'):
+			tmp_scale_to_lumi = 1
+
+
             tmp_jet_mass=getattr(treeIn, jet_mass);
 
             self.isGoodEvent = 0;   
             if self.IsGoodEvent(treeIn,label) and treeIn.MWW> rrv_mass_lvj.getMin() and treeIn.MWW<rrv_mass_lvj.getMax() and tmp_jet_mass>rrv_mass_j.getMin() and tmp_jet_mass<rrv_mass_j.getMax() :
-              self.isGoodEvent = 1;  
+                self.isGoodEvent = 1;  
  
-
-            #if (treeIn.ltopmass > 100. and treeIn.ltopmass < 200.) or (treeIn.htopmass > 100. and treeIn.htopmass < 200.): self.isGoodEvent = 0;
-	    
+    
             if self.isGoodEvent == 1:
-                ### weigh MC events              
-                #tmp_event_weight     = treeIn.weight*tmp_lumi;
-                #tmp_event_weight4fit = treeIn.hltweight*treeIn.puweight*treeIn.btagweight;                               
-                
-		#@#change weight for new trees, divide by tmp_lumi since it's already taken care of in (lumi)weight
-		if TString(label).Contains("_STop") or TString(label).Contains("_WJets") or TString(label).Contains("_TTbar") or TString(label).Contains("_VV") or TString(label).Contains("_data"):
-                    tmp_event_weight 	 = treeIn.puweight*(treeIn.genweight/abs(treeIn.genweight))*treeIn.lumiweight
-		    tmp_event_weight4fit = tmp_event_weight/tmp_scale_to_lumi
-		    #tmp_event_weight4fit = treeIn.puweight*(treeIn.genweight/abs(treeIn.genweight))
-		    #tmp_event_weight4fit = tmp_event_weight4fit*treeIn.lumiweight/tmp_scale_to_lumi
+                ### weigh MC events                                                        
+		#@#change weight for new trees, lumi is already taken care of in totEventWeight
+		if not 'Bulk' in label:
+                	tmp_event_weight 	= treeIn.totEventWeight2
 		else:
-		    tmp_event_weight     = treeIn.weight *tmp_lumi;
-		    tmp_event_weight4fit = treeIn.puweight*treeIn.genweight*treeIn.hltweight*treeIn.btagweight;
-		    tmp_event_weight4fit = tmp_event_weight4fit*treeIn.lumiweight*tmp_lumi/tmp_scale_to_lumi;
+			tmp_event_weight 	= treeIn.puweight*(treeIn.genweight/abs(treeIn.genweight))*treeIn.lumiweight
+		tmp_event_weight4fit 	= tmp_event_weight/tmp_scale_to_lumi
 		#@#	
-	    
-                #tmp_event_weight4fit = tmp_event_weight4fit*treeIn.lumiweight*tmp_lumi/tmp_scale_to_lumi
-
 
                 if label =="_data" or label =="_data_xww":
                     tmp_event_weight=1.;
@@ -2898,11 +2890,13 @@ objName ==objName_before ):
                 params_list.append(self.workspace4limit_.var("Deco_WJets0_xww_sim_%s_%s_mlvj_13TeV_eig3"%(self.channel, self.wtagger_label)))
 
 
-                ### TTbar use exp #@#errorTTbar
+                ### TTbar use expN
                 if isTTbarFloating !=0:
                     print "##################### TTbar will float in the limit procedure + final plot ######################";
                     self.workspace4limit_.var("Deco_TTbar_xww_signal_region_%s_%s_mlvj_13TeV_eig0"%(self.channel, self.wtagger_label)).setError(self.shape_para_error_TTbar);
+		    self.workspace4limit_.var("Deco_TTbar_xww_signal_region_%s_%s_mlvj_13TeV_eig1"%(self.channel, self.wtagger_label)).setError(self.shape_para_error_TTbar);
                     params_list.append(self.workspace4limit_.var("Deco_TTbar_xww_signal_region_%s_%s_mlvj_13TeV_eig0"%(self.channel, self.wtagger_label)));
+		    params_list.append(self.workspace4limit_.var("Deco_TTbar_xww_signal_region_%s_%s_mlvj_13TeV_eig1"%(self.channel, self.wtagger_label)));
 		    
 
                 ### VV use ExpTail:
@@ -3201,6 +3195,10 @@ objName ==objName_before ):
         if mode == "counting":
            datacard_out.write( "\nShape_%s_%s_13TeV lnN - - %0.3f - - -"%(self.channel, self.wtagger_label, 1+self.rrv_counting_uncertainty_from_shape_uncertainty.getError()))
 
+
+	#@# write WJets normalisation 
+	datacard_out.write("\n #WJets number of events sideband region: %s"%self.workspace4fit_.var("rrv_number_WJets0_xww_in_mj_sb_region_from_fitting_%s"%self.channel).getVal())
+
     #### Method used in order to save the workspace in a output root file
     def save_workspace_to_file(self):
         self.workspace4limit_.writeToFile(self.file_rlt_root);
@@ -3391,8 +3389,6 @@ objName ==objName_before ):
 	mplot.Print()
 
 	
-
-	
         
 
 ### funtion to run the complete alpha analysis
@@ -3421,9 +3417,7 @@ def pre_limit_simple(channel,sample,lomass,himass):
 if __name__ == '__main__':
 
     channel=options.channel;
-    #sample=options.sample; #BulkG_WW_lvjj_c0p2_M1000   
     mass=options.mass;
-    #sample = "RS1G_WW_lvjj_M%i"%(mass)
     sample = options.sample+"_M"+str(int(mass))
     
     lomass = mass - mass*15./100.;
@@ -3436,5 +3430,5 @@ if __name__ == '__main__':
         if options.category.find('HP2') != -1 or options.category.find('ALLP2') != -1:	
            pre_limit_sb_correction("method1",channel,sample,options.jetalgo,lomass,himass,40,150,700,5000,"Exp","ExpN",options.interpolate) 
 	else:
-           pre_limit_sb_correction("method1",channel,sample,options.jetalgo,lomass,himass,40,150,700,5000,"ExpN","ExpTail",options.interpolate) 
+           pre_limit_sb_correction("method1",channel,sample,options.jetalgo,lomass,himass,40,150,900,5000,"ExpN","ExpTail",options.interpolate) 
 	
