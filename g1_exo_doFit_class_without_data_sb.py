@@ -123,6 +123,7 @@ class doFit_wj_and_wlvj:
         ## zone definition in the jet mass 
         rrv_mass_j.setRange("sb_lo",self.mj_sideband_lo_min,self.mj_sideband_lo_max);
         rrv_mass_j.setRange("signal_region",self.mj_signal_min,self.mj_signal_max);
+	rrv_mass_j.setRange("total_signal_region",self.mj_sideband_lo_max,self.mj_sideband_hi_min)
         rrv_mass_j.setRange("sb_hi",self.mj_sideband_hi_min,self.mj_sideband_hi_max);
         rrv_mass_j.setRange("sblo_to_sbhi",self.mj_sideband_lo_min,self.mj_sideband_hi_max);
 
@@ -177,7 +178,7 @@ class doFit_wj_and_wlvj:
            elif self.wtagger_label.find("1") != -1: self.categoryID=15;
            elif self.wtagger_label.find("2") != -1: self.categoryID=17;
 
-        if self.channel=="mu" and self.wtagger_label.find("HP") != -1:
+        '''if self.channel=="mu" and self.wtagger_label.find("HP") != -1:
             self.rrv_wtagger_eff_reweight_forT=RooRealVar("rrv_wtagger_eff_reweight_forT","rrv_wtagger_eff_reweight_forT", 0.872);
             self.rrv_wtagger_eff_reweight_forT.setError(0.040);
             self.rrv_wtagger_eff_reweight_forV=RooRealVar("rrv_wtagger_eff_reweight_forV","rrv_wtagger_eff_reweight_forV",1.031);
@@ -186,17 +187,17 @@ class doFit_wj_and_wlvj:
             self.rrv_wtagger_eff_reweight_forT=RooRealVar("rrv_wtagger_eff_reweight_forT","rrv_wtagger_eff_reweight_forT", 0.833);
             self.rrv_wtagger_eff_reweight_forT.setError(0.070);
             self.rrv_wtagger_eff_reweight_forV=RooRealVar("rrv_wtagger_eff_reweight_forV","rrv_wtagger_eff_reweight_forV",1.031);
+            self.rrv_wtagger_eff_reweight_forV.setError(0.126);'''
+        if self.channel=="mu" and self.wtagger_label.find("HP") != -1:
+            self.rrv_wtagger_eff_reweight_forT=RooRealVar("rrv_wtagger_eff_reweight_forT","rrv_wtagger_eff_reweight_forT", 1.);
+            self.rrv_wtagger_eff_reweight_forT.setError(0.040);
+            self.rrv_wtagger_eff_reweight_forV=RooRealVar("rrv_wtagger_eff_reweight_forV","rrv_wtagger_eff_reweight_forV",1.);
             self.rrv_wtagger_eff_reweight_forV.setError(0.126);
-        if self.channel=="mu" and self.wtagger_label.find("LP") != -1:
-            self.rrv_wtagger_eff_reweight_forT=RooRealVar("rrv_wtagger_eff_reweight_forT","rrv_wtagger_eff_reweight_forT", 0.787);
-            self.rrv_wtagger_eff_reweight_forT.setError(0.110);
-            self.rrv_wtagger_eff_reweight_forV=RooRealVar("rrv_wtagger_eff_reweight_forV","rrv_wtagger_eff_reweight_forV",0.881);
-            self.rrv_wtagger_eff_reweight_forV.setError(0.490);
-        if self.channel=="el" and self.wtagger_label.find("LP") != -1:
-            self.rrv_wtagger_eff_reweight_forT=RooRealVar("rrv_wtagger_eff_reweight_forT","rrv_wtagger_eff_reweight_forT", 0.661);
-            self.rrv_wtagger_eff_reweight_forT.setError(0.200);
-            self.rrv_wtagger_eff_reweight_forV=RooRealVar("rrv_wtagger_eff_reweight_forV","rrv_wtagger_eff_reweight_forV",0.881);
-            self.rrv_wtagger_eff_reweight_forV.setError(0.490);
+        if self.channel=="el" and self.wtagger_label.find("HP") != -1:
+            self.rrv_wtagger_eff_reweight_forT=RooRealVar("rrv_wtagger_eff_reweight_forT","rrv_wtagger_eff_reweight_forT", 1.);
+            self.rrv_wtagger_eff_reweight_forT.setError(0.070);
+            self.rrv_wtagger_eff_reweight_forV=RooRealVar("rrv_wtagger_eff_reweight_forV","rrv_wtagger_eff_reweight_forV",1.);
+            self.rrv_wtagger_eff_reweight_forV.setError(0.126);
 
 
 
@@ -1933,6 +1934,20 @@ objName ==objName_before ):
         model_VV    = self.get_VV_mj_Model("_VV_xww"+massscale);
 
 	model_TTbar.Print()
+#	nttbartot = self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel))
+#	rrv_mass_j.setRange(40,65)
+#	integral = model_TTbar.createIntegral(RooArgSet(rrv_mass_j))
+#	print integral.getVal()
+#	rrv_mass_j.setRange(65,105)
+#	integral = model_TTbar.createIntegral(RooArgSet(rrv_mass_j))
+#	print integral.getVal()
+#	rrv_mass_j.setRange(105,150)
+#	integral = model_TTbar.createIntegral(RooArgSet(rrv_mass_j))
+#	print integral.getVal()
+	
+#	print str(self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).getVal())
+	
+		
 	#@#errorTTbar 
         ## only two parameters are fix, offset and width, while the exp is floating , otherwise if shape different User1 or ErfExp everything is flaoting
         model_WJets = self.get_WJets_mj_Model(label);
@@ -1966,6 +1981,8 @@ objName ==objName_before ):
         getattr(self.workspace4fit_,"import")(model_data);
 
         rfresult.Print();
+
+
 	print 'realtive error of ttbar-normalization: ' + str(self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).getError() / self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).getVal())
 
         rfresult.covarianceMatrix().Print();
@@ -2114,15 +2131,19 @@ objName ==objName_before ):
             self.get_mj_normalization_insignalregion(label);
 
         #### to calculate the WJets's normalization and error in M_J signal_region. The error must contain the shape error: model_WJets have new parameters fitting data
-        fullInt   = model_WJets.createIntegral(RooArgSet(rrv_mass_j),RooArgSet(rrv_mass_j) );
-        signalInt = model_WJets.createIntegral(RooArgSet(rrv_mass_j),RooArgSet(rrv_mass_j),("signal_region"));
-        fullInt_val = fullInt.getVal()
-        signalInt_val = signalInt.getVal()/fullInt_val
 
+        fullInt   	= model_WJets.createIntegral(RooArgSet(rrv_mass_j),RooArgSet(rrv_mass_j) );
+        signalInt 	= model_WJets.createIntegral(RooArgSet(rrv_mass_j),RooArgSet(rrv_mass_j),("signal_region"));
+ 	signalIntTot 	= model_WJets.createIntegral(RooArgSet(rrv_mass_j),RooArgSet(rrv_mass_j),("total_signal_region"));
+        fullInt_val	= fullInt.getVal()
+        signalInt_val 	= signalInt.getVal()/fullInt_val
+	signalIntTot_val= signalIntTot.getVal()/fullInt_val
+
+	
         ## take the value from the fit (normalization) and multiply it from the ratio of the integrals
         rrv_number_WJets_in_mj_signal_region_from_fitting = RooRealVar("rrv_number%s_in_mj_signal_region_from_fitting_%s"%(label,self.channel),"rrv_number%s_in_mj_signal_region_from_fitting_%s"%(label,self.channel),self.workspace4fit_.var("rrv_number%s_%s_mj"%(label,self.channel)).getVal()*signalInt_val);
-	#@#
-	rrv_number_WJets_in_mj_sb_region_from_fitting = RooRealVar("rrv_number%s_in_mj_sb_region_from_fitting_%s"%(label,self.channel),"rrv_number%s_in_mj_sb_region_from_fitting_%s"%(label,self.channel),self.workspace4fit_.var("rrv_number%s_%s_mj"%(label,self.channel)).getVal()*(1-signalInt_val)) 
+	#@#WJETSNORMSB
+	rrv_number_WJets_in_mj_sb_region_from_fitting = RooRealVar("rrv_number%s_in_mj_sb_region_from_fitting_%s"%(label,self.channel),"rrv_number%s_in_mj_sb_region_from_fitting_%s"%(label,self.channel),self.workspace4fit_.var("rrv_number%s_%s_mj"%(label,self.channel)).getVal()*(1-signalIntTot_val)) 
 	#@#
 
         #### Error on the normalization --> from a dedicated function taking into account shape uncertainty
@@ -2273,6 +2294,7 @@ objName ==objName_before ):
         rfresult = model.fitTo(rdataset_mj,RooFit.Save(1), RooFit.SumW2Error(kTRUE) ,RooFit.Extended(kTRUE), RooFit.Minimizer("Minuit2") );
         #rfresult = model.fitTo(rdataset_mj,RooFit.Save(1), RooFit.SumW2Error(kTRUE) ,RooFit.Extended(kTRUE), RooFit.Minimizer("Minuit2") );
         rfresult.Print();
+	
 	#@#errorTTbar if 'TTbar' in label:
 	#	print self.workspace4fit_.var('rrv_number_TTbar_xww_el_mj').getError();exit(0)
 	
@@ -2487,8 +2509,8 @@ objName ==objName_before ):
 		if TString(label).Contains('Bulk'):
        			tmp_scale_to_lumi = treeIn.lumiweight
 		if TString(label).Contains("_STop") or TString(label).Contains("_WJets") or TString(label).Contains("_TTbar") or TString(label).Contains("_VV"):
-      			#tmp_scale_to_lumi = treeIn.totEventWeight2 / (treeIn.puweight*(treeIn.genweight/abs(treeIn.genweight)))
-			tmp_scale_to_lumi = 1
+      			tmp_scale_to_lumi = treeIn.totEventWeight2 / (treeIn.puweight*(treeIn.genweight/abs(treeIn.genweight)))
+			#tmp_scale_to_lumi = 1
 		if TString(label).Contains('data'):
 			tmp_scale_to_lumi = 1
 
