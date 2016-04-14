@@ -24,7 +24,7 @@ parser = OptionParser()
 
 parser.add_option('-c', '--channel',action="store",type="string",dest="channel",default="el")
 parser.add_option('--sample', action="store",type="string",dest="sample",default="BulkG_WW_lvjj")
-parser.add_option('--mass', action="store",type="float",dest="mass",default="800")
+parser.add_option('--mass', action="store",type="float",dest="mass",default="2000")
 parser.add_option('-s','--simple', action='store', dest='simple', default=False, help='pre-limit in simple mode')
 parser.add_option('-b', action='store_true', dest='noX', default=True, help='no X11 windows')
 parser.add_option('--inPath', action="store",type="string",dest="inPath",default="./")
@@ -498,8 +498,6 @@ objName ==objName_before ):
 		    in_obj.GetYaxis().SetRangeUser(1e-2,in_obj.GetMaximum()/200)
 		elif not frompull and logy :
 		    in_obj.GetYaxis().SetRangeUser(0.00001,in_obj.GetMaximum())
-		elif isalpha:    
-		    in_obj.GetYaxis().SetRangeUser(0.00001,0.28)
 
         if is_range:
             h2=TH2D("h2","",100,400,1400,4,0.00001,4);
@@ -564,58 +562,17 @@ objName ==objName_before ):
             cMassFit.SaveAs(rlt_file.Data());
             rlt_file.ReplaceAll(".pdf",".png");
             cMassFit.SaveAs(rlt_file.Data());
-
-    #### in order to make the banner on the plots
-    def banner4Plot(self, iswithpull=0):
-      print "############### draw the banner ########################"
-
-      if iswithpull:
-       if self.channel=="el":
-#        banner = TLatex(0.3,0.96,("CMS Preliminary, %.1f fb^{-1} at #sqrt{s} = 8 TeV, W#rightarrow e #nu "%(self.GetLumi())));
-        banner = TLatex(0.18,0.96,"CMS                                             L = 19.7 fb^{-1} at #sqrt{s} = 8 TeV");
-       elif self.channel=="mu":
-#        banner = TLatex(0.3,0.96,("CMS Preliminary, %.1f fb^{-1} at #sqrt{s} = 8 TeV, W#rightarrow #mu #nu "%(self.GetLumi())));
-        banner = TLatex(0.18,0.96,"CMS                                             L = 19.7 fb^{-1} at #sqrt{s} = 8 TeV");
-       elif self.channel=="em":
-#        banner = TLatex(0.3,0.96,("CMS Preliminary, %.1f fb^{-1} at #sqrt{s} = 8 TeV, W#rightarrow #mu,e #nu "%(self.GetLumi())));
-        banner = TLatex(0.18,0.96,"CMS                                             L = 19.7 fb^{-1} at #sqrt{s} = 8 TeV");
-       banner.SetNDC(); banner.SetTextSize(0.041);
-      else:
-       if self.channel=="el":
-#        banner = TLatex(0.22,0.96,("CMS Preliminary, %.1f fb^{-1} at #sqrt{s} = 8 TeV, W#rightarrow e #nu "%(self.GetLumi())));
-        banner = TLatex(0.18,0.96,"CMS                                         L = 19.7 fb^{-1} at #sqrt{s} = 8 TeV");
-       if self.channel=="mu":
-#        banner = TLatex(0.22,0.96,("CMS Preliminary, %.1f fb^{-1} at #sqrt{s} = 8 TeV, W#rightarrow #mu #nu "%(self.GetLumi())));
-        banner = TLatex(0.18,0.96,"CMS                                         L = 19.7 fb^{-1} at #sqrt{s} = 8 TeV");
-       if self.channel=="em":
-#        banner = TLatex(0.22,0.96,("CMS Preliminary, %.1f fb^{-1} at #sqrt{s} = 8 TeV, W#rightarrow #mu,e #nu "%(self.GetLumi())));
-        banner = TLatex(0.18,0.96,"CM                                          L = 19.7 fb^{-1} at #sqrt{s} = 8 TeV");
-       banner.SetNDC(); banner.SetTextSize(0.033);
-                                                                                                         
-      return banner;
     
     #### draw canvas with plots with pull
     def draw_canvas_with_pull(self, rrv_x, datahist, mplot, mplot_pull,ndof,parameters_list,in_directory, in_file_name, in_model_name="", show_constant_parameter=0, logy=0,ismj=0,fix_axis=0):# mplot + pull
 
         print "############### draw the canvas with pull ########################" 
-	#hist_ = datahist.createHistogram(rrv_x.GetName(),int(rrv_x.getBins()/self.narrow_factor))
-        #chi2_ = self.calculate_chi2(datahist,rrv_x,mplot,ndof,ismj)
 	#@#mplot.GetXaxis().SetTitle(rrv_x.GetTitle() + " (GeV)")
 	mplot.GetXaxis().SetTitle("")
-	#mplot.GetXaxis().SetTitleOffset(1.1);
-        #mplot.GetYaxis().SetTitleOffset(1.3);
-        #mplot.GetXaxis().SetTitleSize(0.055);
-        #mplot.GetYaxis().SetTitleSize(0.055);
-        #mplot.GetXaxis().SetLabelSize(0.045);
-        #mplot.GetYaxis().SetLabelSize(0.045);
         mplot.GetYaxis().SetTitleSize(0.07)
         mplot.GetYaxis().SetTitleOffset(0.9)
         mplot.GetYaxis().SetLabelSize(0.06)
 	mplot.GetXaxis().SetLabelSize(0);
-        #mplot_pull.GetXaxis().SetLabelSize(0.14);
-        #mplot_pull.GetYaxis().SetLabelSize(0.14);
-        #mplot_pull.GetYaxis().SetTitleSize(0.15);
-        #mplot_pull.GetYaxis().SetNdivisions(205);
 	
         cMassFit = self.get_canvas("cMassFit")#TCanvas("cMassFit","cMassFit", 600,600);
         # if parameters_list is empty, don't draw pad3
@@ -647,28 +604,8 @@ objName ==objName_before ):
                                                                                                                                                                               
         pad2.cd();
 	
-	'''	
-	if ismj:
-	 pt = ROOT.TPaveText(0.6243719,0.4080919,0.8756281,0.547952,"NDC")
-	 pt.SetTextSize(0.03746254)
-	else:
-	 pt = ROOT.TPaveText(0.5175879,0.7152847,0.8027638,0.8551449,"NDC")
-	 pt.SetTextSize(0.054)
-	 
-	pt.SetTextFont(62)	
-	pt.SetTextAlign(12)
-	pt.SetFillColor(0)
-	pt.SetBorderSize(0)
-	pt.SetFillStyle(0)
-	text = pt.AddText("#chi^2/d.o.f = %.2f/%i = %.2f" %(chi2_[0],chi2_[1],chi2_[0]/chi2_[1]))
-	text.SetTextFont(62)
-	'''
 	
         mplot.Draw();
-	#pt.Draw()
-
-        #banner = self.banner4Plot(1);
-        #banner.Draw();
 
         pad1.cd();
         mplot_pull.Draw("AP");
@@ -744,13 +681,13 @@ objName ==objName_before ):
             pad2.Update();
             cMassFit.Update();
             rlt_file.ReplaceAll(".root","_log.root");
-            cMassFit.SaveAs(rlt_file.Data());
+            #cMassFit.SaveAs(rlt_file.Data());
             rlt_file.ReplaceAll(".root",".pdf");
             cMassFit.SaveAs(rlt_file.Data());
             rlt_file.ReplaceAll(".pdf",".png");
             cMassFit.SaveAs(rlt_file.Data());
 
-        self.draw_canvas(mplot,in_directory,string_file_name.Data(),0,logy,1);
+        self.draw_canvas(mplot,in_directory,string_file_name.Data(),0,logy,1,0,fix_axis);
 
     def calculate_chi2(self,hist,rrv_x,mplot_orig,ndof,ismj):
 
@@ -766,21 +703,12 @@ objName ==objName_before ):
 	  hist.weightError(RooAbsData.SumW2)
 	  print x,y,bins_,hist.get(bins_).getRealValue(rrv_x.GetName()),hist.weight(),hist.weightError(RooAbsData.SumW2)
 	  if hist.weight() != 0: pulls.append(y)
-	  #print x,y,hist.GetBinCenter(bins_),hist.GetBinContent(bins_)
-          #if not(ismj) and y != 0 and TMath.Abs(y) < 4: pulls.append(y)
-	  #elif ismj and y != 0 and (x < 65 or x > 135):
-	  # pulls.append(y) 
-          # bins+=1
-	  #else: print "Bin %f is empty!" %x 
 	  bins_+=1
 	  
 	chi2 = 0
 	for p in pulls:
 	 chi2+=(p*p)
 	 
-	#if ismj:
-	# ndof = ndof - (hpull.GetN()-bins) 
-	# print hpull.GetN(),bins,ndof
 	print "Chi2/ndof = %f/%f = %f" %(chi2,ndof,chi2/ndof)
 	return chi2,ndof
 	       
@@ -822,20 +750,6 @@ objName ==objName_before ):
    	#gt.GetXaxis().SetNdivisions(505)
 	hpull.SetHistogram(gt)
 	return hpull
-        #mplot_pull = rrv_x.frame(RooFit.Title("Pull Distribution"), RooFit.Bins(int(rrv_x.getBins()/self.narrow_factor)));
-        #medianLine = TLine(rrv_x.getMin(),0.,rrv_x.getMax(),0); medianLine.SetLineWidth(2); medianLine.SetLineColor(kRed);
-        #mplot_pull.addObject(medianLine);
-        #mplot_pull.addPlotable(hpull,"P");
-        #mplot_pull.SetTitle("");
-        #mplot_pull.GetXaxis().SetTitle("");
-        #mplot_pull.GetYaxis().SetRangeUser(-5,5);
-        #mplot_pull.GetYaxis().SetTitleSize(0.10);
-        #mplot_pull.GetYaxis().SetLabelSize(0.10);
-        #mplot_pull.GetXaxis().SetTitleSize(0.10);
-        #mplot_pull.GetXaxis().SetLabelSize(0.10);
-        #mplot_pull.GetYaxis().SetTitleOffset(0.40);
-        #mplot_pull.GetYaxis().SetTitle("#frac{Data-Fit}{#sigma_{data}}");
-        #mplot_pull.GetYaxis().CenterTitle();
 
         return mplot_pull;
 
@@ -1013,13 +927,6 @@ objName ==objName_before ):
             rrv_n2_CB     = RooRealVar("rrv_n2_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_n2_CB"+label+"_"+self.channel+"_"+self.wtagger_label,g_n2.Eval(int(options.mass)));
             rrv_alpha1_CB = RooRealVar("rrv_alpha1_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_alpha1_CB"+label+"_"+self.channel+"_"+self.wtagger_label,g_alpha1.Eval(int(options.mass)));
 
-            #set parameters of the CB to the interpolated value
-#            rrv_mean_CB.setVal(g_mean.Eval(int(options.mass))); 
-#            rrv_sigma_CB.setVal(g_sigma.Eval(int(options.mass))); 
-#            rrv_n1_CB.setVal(g_n1.Eval(int(options.mass))); 
-#            rrv_n2_CB.setVal(g_n2.Eval(int(options.mass))); 
-#            rrv_alpha1_CB.setVal(g_alpha1.Eval(int(options.mass))); 
-#            rrv_alpha2_CB.setVal(g_alpha2.Eval(int(options.mass))); 
 
             rrv_mean_CB.Print()
             rrv_sigma_CB.Print()
@@ -1089,8 +996,8 @@ objName ==objName_before ):
         if in_model_name == "DoubleCB_v1":
             label_tstring=TString(label);
             print "########### Double CB for Bulk graviton mlvj ############"                                                                  
-            if label_tstring.Contains("M800") and (label_tstring.Contains("RS1G_WW") or label_tstring.Contains("BulkG_WW") or label_tstring.Contains("Wprime_WZ")):
-                    rrv_mean_CB  = RooRealVar("rrv_mean_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_mean_CB"+label+"_"+self.channel+"_"+self.wtagger_label,820,790,880);
+            if label_tstring.Contains("M2000") and (label_tstring.Contains("RS1G_WW") or label_tstring.Contains("BulkG_WW") or label_tstring.Contains("Wprime_WZ")):
+                    rrv_mean_CB  = RooRealVar("rrv_mean_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_mean_CB"+label+"_"+self.channel+"_"+self.wtagger_label,2000,1900,2100);
                     rrv_sigma_CB = RooRealVar("rrv_sigma_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_sigma_CB"+label+"_"+self.channel+"_"+self.wtagger_label,50,40,70);
                     rrv_n1_CB     = RooRealVar("rrv_n1_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_n1_CB"+label+"_"+self.channel+"_"+self.wtagger_label, 15.,5.,25.);
                     rrv_alpha2_CB = RooRealVar("rrv_alpha2_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_alpha2_CB"+label+"_"+self.channel+"_"+self.wtagger_label,1.64,1.,1.9);
@@ -1252,7 +1159,7 @@ objName ==objName_before ):
             if self.wtagger_label=="HP": #change this!
                 rrv_p1 = RooRealVar("rrv_p1_User1"+label+"_"+self.channel,"rrv_p1_User1"+label+"_"+self.channel, -4, -9, -2);
             else:
-                rrv_p1 = RooRealVar("rrv_p1_User1"+label+"_"+self.channel,"rrv_p1_User1"+label+"_"+self.channel, -2, -4, 0.);
+                rrv_p1 = RooRealVar("rrv_p1_User1"+label+"_"+self.channel,"rrv_p1_User1"+label+"_"+self.channel, -4, -9, -2.);
             model_pdf=RooUser1Pdf("model_pdf"+label+"_"+self.channel+mass_spectrum,"model_pdf"+label+"_"+self.channel+mass_spectrum,rrv_x,rrv_p0,rrv_p1);
 
         ## Exp+Gaus or mj spectrum
@@ -1598,10 +1505,6 @@ objName ==objName_before ):
     def get_WJets_mlvj_correction_sb_lo_to_signal_region(self,label, mlvj_model):
 
         print" ############# get the extrapolation function alpha from MC : ",label,"   ",mlvj_model," ###############";          
-        #tdrstyle.setTDRStyle()
-        #tmp_Style.SetPadRightMargin(0.08);
-        #tmp_Style.SetPadTickY(0);
-        #tmp_Style.cd();
 
         ### take input var and datasets from 4fit collection --> mc not scaled to lumi --> just a shape here 
         rrv_x = self.workspace4fit_.var("rrv_mass_lvj");
@@ -1814,6 +1717,7 @@ objName ==objName_before ):
             self.draw_canvas_with_pull( rrv_x,datahist,mplot_signal_region, mplot_pull_signal_region,ndof,parameters_list,"%s/other/"%(self.plotsDir), "m_lvj%s_signal_region_sim"%(label),"",1,1);
 
         ### Total plot shape in sb_lo, sr and alpha
+	alpha_norm_factor = 5e-3 
         model_pdf_sb_lo_WJets.plotOn(mplot,RooFit.Name("Sideband"));
         model_pdf_signal_region_WJets.plotOn(mplot, RooFit.LineColor(kRed), RooFit.Name("Signal Region"));
         correct_factor_pdf_deco.plotOn(mplot, RooFit.LineColor(kBlack),RooFit.Name("#alpha") );
@@ -1881,8 +1785,8 @@ objName ==objName_before ):
         mplot.addObject(self.leg);
         
         ## set the Y axis in arbitrary unit 
-        if self.signal_sample=="ggH600" or self.signal_sample=="ggH700": tmp_y_max=0.25
-        else: tmp_y_max=0.28
+        tmp_y_max=0.125
+	tmp_y_min=1e-5
         mplot.GetYaxis().SetRangeUser(0,tmp_y_max);
 
         #### Draw another axis with the real value of alpha
@@ -1894,7 +1798,7 @@ objName ==objName_before ):
         tmp_alpha_scale = tmp_alpha_ratio/tmp_alpha_pdf;
 
         #add alpha scale axis
-        axis_alpha=TGaxis( rrv_x.getMax(), 0, rrv_x.getMax(), tmp_y_max, 0.1, tmp_y_max*tmp_alpha_scale, 510, "+L" ); #-,-+,+,L
+        axis_alpha=TGaxis( rrv_x.getMax(), 0, rrv_x.getMax(), tmp_y_max, tmp_y_min*tmp_alpha_scale, tmp_y_max*tmp_alpha_scale, 510, "+L" ); #-,-+,+,L
         axis_alpha.SetTitle("#alpha");
         axis_alpha.SetTitleOffset(0.65);
         axis_alpha.SetTitleSize(0.05);
@@ -2018,11 +1922,6 @@ objName ==objName_before ):
          rrv_TTbarmassdn = self.workspace4fit_.var("rrv_number_dataset_signal_region_TTbar_xww_massdn_%s_mj"%(self.channel));
          self.TTbar_normlization_uncertainty_from_jet_mass=( TMath.Abs(rrv_TTbarmassup.getVal()-rrv_TTbar.getVal())+TMath.Abs(rrv_TTbarmassdn.getVal()-rrv_TTbar.getVal() ) )/2./rrv_TTbar.getVal();
 
-        #rrv_VV = self.workspace4fit_.var("rrv_number_dataset_signal_region_VV_xww_%s_mj"%(self.channel));
-        #if self.workspace4fit_.var("rrv_number_dataset_signal_region_VV_xww_massup_%s_mj"%(self.channel)) and self.workspace4fit_.var("rrv_number_dataset_signal_region_VV_xww_massdn_%s_mj"%(self.channel)):
-        # rrv_VVmassup = self.workspace4fit_.var("rrv_number_dataset_signal_region_VV_xww_massup_%s_mj"%(self.channel));
-        # rrv_VVmassdn = self.workspace4fit_.var("rrv_number_dataset_signal_region_VV_xww_massdn_%s_mj"%(self.channel));
-        # self.VV_normlization_uncertainty_from_jet_mass=( TMath.Abs(rrv_VVmassup.getVal()-rrv_VV.getVal())+TMath.Abs(rrv_VVmassdn.getVal()-rrv_VV.getVal() ) )/2./rrv_VV.getVal();
 
     #### make the mj sideband fit on data ti get the Wjets normaliztion 
     def fit_WJetsNormalization_in_Mj_signal_region(self,label,massscale=""): 
@@ -2036,35 +1935,48 @@ objName ==objName_before ):
         model_TTbar = self.get_TTbar_mj_Model("_TTbar_xww"+massscale);
         model_STop  = self.get_STop_mj_Model("_STop_xww"+massscale);
         model_VV    = self.get_VV_mj_Model("_VV_xww"+massscale);
-        ## only two parameters are fix, offset and width while the exp is floating , otherwise if shape different User1 or ErfExp everything is flaoting
+
+	model_TTbar.Print()
+	#@#errorTTbar 
+        ## only two parameters are fix, offset and width, while the exp is floating , otherwise if shape different User1 or ErfExp everything is flaoting
         model_WJets = self.get_WJets_mj_Model(label);
 
         ## Total Pdf and fit only in sideband 
         model_data = RooAddPdf("model_data_xww%s_%s_mj"%(massscale,self.channel),"model_data_xww%s_%s_mj"%(massscale,self.channel),RooArgList(model_WJets,model_VV,model_TTbar,model_STop))
-	#@#add uncertainty on ttbar
+	#@#let ttbar float with gaussian constraint
 
-	mean 		= RooRealVar('ttbar_norm_mean','ttbar_norm_mean',self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).getVal())
+	#@#save value of rrv_number_TTbar from TTbar-only-fit
+	if '_WJets0_' in label:
+		meanval		= RooRealVar('meanval','meanval',self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).getVal())
+		ttbar_error	= RooRealVar('ttbar_error','ttbar_error',self.workspace4fit_.var('rrv_number_TTbar_xww%s_%s_mj'%(massscale,self.channel)).getError())
+		getattr(self.workspace4fit_,'import')(meanval)
+		getattr(self.workspace4fit_,'import')(ttbar_error)
+
+	mean 		= RooRealVar('ttbar_norm_mean','ttbar_norm_mean',self.workspace4fit_.var('meanval').getVal())
 	sigma 		= RooRealVar('ttbar_norm_sigma','ttbar_norm_sigma',0.055 * mean.getVal())
 	ttbar_gauss	= RooGaussian("ttbar_gauss_uncert","ttbar_gauss_uncert",self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)),mean,sigma)
 	ttbar_gauss.Print()
 	
 	model_data4fit	= RooProdPdf("model_data_xww%s_%s_mj_4fit"%(massscale,self.channel),"model_data_xww%s_%s_mj_4fit"%(massscale,self.channel),model_data,ttbar_gauss)
+	#@#set value and error of rrv_number_ttbar to prefit
+	self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setVal(self.workspace4fit_.var('meanval').getVal())
+	self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setError(self.workspace4fit_.var('ttbar_error').getVal())
+	self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setRange(0,1e4)
 	#@#
-
 	self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setConstant(kFALSE)
         rfresult = model_data4fit.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo,sb_hi") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2) );
         rfresult = model_data4fit.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo,sb_hi") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2), RooFit.Minimizer("Minuit2") );
 	self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setConstant(kTRUE)
+        getattr(self.workspace4fit_,"import")(model_data);
 
         rfresult.Print();
-	print self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).getError() / self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).getVal()
+	print 'realtive error of ttbar-normalization: ' + str(self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).getError() / self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).getVal())
 
         rfresult.covarianceMatrix().Print();
-        getattr(self.workspace4fit_,"import")(model_data);
+	print mean.getVal()
 	
 
-
-        ## Total numver of event 
+        ## Total numver of event  
         rrv_number_data_mj = RooRealVar("rrv_number_data_xww%s_%s_mj"%(massscale,self.channel),"rrv_number_data_xww%s_%s_mj"%(massscale,self.channel),
                                          self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).getVal()+
                                          self.workspace4fit_.var("rrv_number_STop_xww%s_%s_mj"%(massscale,self.channel)).getVal()+
@@ -2532,58 +2444,10 @@ objName ==objName_before ):
 
     def IsGoodEvent(self,tree,label):
        #@#always True for new trees -> only HP
-       if TString(label).Contains("STop") or TString(label).Contains("WJets") or TString(label).Contains("TTbar") or TString(label).Contains("VV") or TString(label).Contains("data"):
-	  keepEvent = True
-	  return keepEvent
-       #@#
-       keepEvent = False
-       
-       #if the category has a specific purity and a specific nbtag
-       if (self.wtagger_label.find('HP') != -1 or self.wtagger_label.find('LP') != -1) and (self.wtagger_label.find('0') != -1 or self.wtagger_label.find('1') != -1 or self.wtagger_label.find('2') != -1):
-          if tree.channel == self.categoryID: keepEvent = True
-         
-       #all HP nbtag categories == HP only
-       if self.wtagger_label.find('HP') != -1 and (self.wtagger_label.find('0') == -1 and self.wtagger_label.find('1') == -1 and self.wtagger_label.find('2') == -1):  
-          if self.channel == 'el':
-             if tree.channel == 0 or tree.channel == 6 or tree.channel == 8 or tree.channel == 10: keepEvent = True
-          elif self.channel == 'mu':   
-             if tree.channel == 1 or tree.channel == 7 or tree.channel == 9 or tree.channel == 11: keepEvent = True
-
-       #all LP nbtag categories == LP only
-       if self.wtagger_label.find('LP') != -1 and (self.wtagger_label.find('0') == -1 and self.wtagger_label.find('1') == -1 and self.wtagger_label.find('2') == -1):  
-          if self.channel == 'el':
-             if tree.channel == 2 or tree.channel == 12 or tree.channel == 14 or tree.channel == 16: keepEvent = True
-          elif self.channel == 'mu':   
-             if tree.channel == 3 or tree.channel == 13 or tree.channel == 15 or tree.channel == 17: keepEvent = True
-          
-           
-       #all purities                     
-       if self.wtagger_label.find('ALLP') != -1:   
-          if self.channel == 'el':
-             #all purities but specific nbtag category
-             if self.wtagger_label.find('0') != -1:
-                if tree.channel == 6 or tree.channel == 12 or tree.channel == 18: keepEvent = True
-             elif self.wtagger_label.find('1') != -1:
-                if tree.channel == 8 or tree.channel == 14 or tree.channel == 20: keepEvent = True
-             elif self.wtagger_label.find('2') != -1:
-                if tree.channel == 10 or tree.channel == 16 or tree.channel == 22: keepEvent = True
-             #all purities and all nbtag categories
-             else:
-                if tree.channel == 0 or tree.channel == 2 or tree.channel == 6 or tree.channel == 12 or tree.channel == 8 or tree.channel == 14 or tree.channel == 10 or tree.channel == 16: keepEvent = True
-          elif self.channel == 'mu':
-             #all purities but specific nbtag category
-             if self.wtagger_label.find('0') != -1:
-                if tree.channel == 7 or tree.channel == 13: keepEvent = True
-             elif self.wtagger_label.find('1') != -1:
-                if tree.channel == 9 or tree.channel == 15: keepEvent = True
-             elif self.wtagger_label.find('2') != -1:
-                if tree.channel == 11 or tree.channel == 17: keepEvent = True
-             #all purities and all nbtag categories
-             else:
-                if tree.channel == 1 or tree.channel == 3 or tree.channel == 7 or tree.channel == 13 or tree.channel == 9 or tree.channel == 15 or tree.channel == 11 or tree.channel == 17: keepEvent = True
-          
-       
+       keepEvent = True
        return keepEvent
+       #@#
+       
                           
     ##### Method used to cycle on the events and for the dataset to be fitted
     def get_mj_and_mlvj_dataset(self,in_file_name, label, jet_mass ):# to get the shape of m_lvj,jet_mass="jet_mass_pr"
@@ -2635,54 +2499,34 @@ objName ==objName_before ):
         hnum_4region=TH1D("hnum_4region"+label+"_"+self.channel,"hnum_4region"+label+"_"+self.channel,4,-1.5,2.5);# m_j -1: sb_lo; 0:signal_region; 1: sb_hi; 2:total
         hnum_2region=TH1D("hnum_2region"+label+"_"+self.channel,"hnum_2region"+label+"_"+self.channel,2,-0.5,1.5);# m_lvj 0: signal_region; 1: total
 
-        if self.channel=="el":
-            tmp_lumi=2093.92;
-        elif self.channel == "mu":
-            tmp_lumi=2093.92;
-        else:
-            tmp_lumi=2093.92;
-        
         for i in range(treeIn.GetEntries()):
             if i % 10000 == 0: print "iEntry: ",i
             treeIn.GetEntry(i);
 
             if i==0:
-	       #@#
-	       if TString(label).Contains("_STop") or TString(label).Contains("_WJets") or TString(label).Contains("_TTbar") or TString(label).Contains("_VV"):
-	          tmp_scale_to_lumi = treeIn.lumiweight
-	       else:
-               	  tmp_scale_to_lumi = treeIn.lumiweight*tmp_lumi
-	       #@#
-	       #tmp_scale_to_lumi = treeIn.lumiweight*tmp_lumi       
-       
+		if TString(label).Contains('Bulk'):
+       			tmp_scale_to_lumi = treeIn.lumiweight
+		if TString(label).Contains("_STop") or TString(label).Contains("_WJets") or TString(label).Contains("_TTbar") or TString(label).Contains("_VV"):
+      			tmp_scale_to_lumi = treeIn.totEventWeight2 / (treeIn.puweight*(treeIn.genweight/abs(treeIn.genweight)))
+		if TString(label).Contains('data'):
+			tmp_scale_to_lumi = 1
+
             tmp_jet_mass=getattr(treeIn, jet_mass);
 
             self.isGoodEvent = 0;   
             if self.IsGoodEvent(treeIn,label) and treeIn.MWW> rrv_mass_lvj.getMin() and treeIn.MWW<rrv_mass_lvj.getMax() and tmp_jet_mass>rrv_mass_j.getMin() and tmp_jet_mass<rrv_mass_j.getMax() :
-              self.isGoodEvent = 1;  
+                self.isGoodEvent = 1;  
  
-
-            #if (treeIn.ltopmass > 100. and treeIn.ltopmass < 200.) or (treeIn.htopmass > 100. and treeIn.htopmass < 200.): self.isGoodEvent = 0;
-	    
+    
             if self.isGoodEvent == 1:
-                ### weigh MC events              
-                #tmp_event_weight     = treeIn.weight*tmp_lumi;
-                #tmp_event_weight4fit = treeIn.hltweight*treeIn.puweight*treeIn.btagweight;                               
-                
-		#@#change weight for new trees, divide by tmp_lumi since it's already taken care of in (lumi)weight
-		if TString(label).Contains("_STop") or TString(label).Contains("_WJets") or TString(label).Contains("_TTbar") or TString(label).Contains("_VV") or TString(label).Contains("_data"):
-                    tmp_event_weight 	 = treeIn.puweight*(treeIn.genweight/abs(treeIn.genweight))*treeIn.lumiweight
-		    tmp_event_weight4fit = tmp_event_weight/tmp_scale_to_lumi
-		    #tmp_event_weight4fit = treeIn.puweight*(treeIn.genweight/abs(treeIn.genweight))
-		    #tmp_event_weight4fit = tmp_event_weight4fit*treeIn.lumiweight/tmp_scale_to_lumi
+                ### weigh MC events                                                        
+		#@#change weight for new trees, lumi is already taken care of in totEventWeight
+		if not 'Bulk' in label:
+                	tmp_event_weight 	= treeIn.totEventWeight2
 		else:
-		    tmp_event_weight     = treeIn.weight *tmp_lumi;
-		    tmp_event_weight4fit = treeIn.puweight*treeIn.genweight*treeIn.hltweight*treeIn.btagweight;
-		    tmp_event_weight4fit = tmp_event_weight4fit*treeIn.lumiweight*tmp_lumi/tmp_scale_to_lumi;
+			tmp_event_weight 	= treeIn.puweight*(treeIn.genweight/abs(treeIn.genweight))*treeIn.lumiweight
+		tmp_event_weight4fit 	= tmp_event_weight/tmp_scale_to_lumi
 		#@#	
-	    
-                #tmp_event_weight4fit = tmp_event_weight4fit*treeIn.lumiweight*tmp_lumi/tmp_scale_to_lumi
-
 
                 if label =="_data" or label =="_data_xww":
                     tmp_event_weight=1.;
@@ -2720,10 +2564,14 @@ objName ==objName_before ):
                     rdataset4fit_sb_hi_mlvj.add( RooArgSet( rrv_mass_lvj ), tmp_event_weight4fit );
                     
                 rrv_mass_j.setVal( tmp_jet_mass );
-		#blind signal region
-		if tmp_jet_mass <= 65 or tmp_jet_mass >= 105:
-                	rdataset_mj.add( RooArgSet( rrv_mass_j ), tmp_event_weight );
-                rdataset4fit_mj.add( RooArgSet( rrv_mass_j ), tmp_event_weight4fit );
+		#cut out data in signal region
+		if 'data' in label:
+			if tmp_jet_mass <= 65 or tmp_jet_mass >= 105:
+                    		rdataset_mj.add( RooArgSet( rrv_mass_j ), tmp_event_weight )
+                		rdataset4fit_mj.add( RooArgSet( rrv_mass_j ), tmp_event_weight4fit )
+		else:
+			rdataset_mj.add( RooArgSet( rrv_mass_j ), tmp_event_weight )
+	       		rdataset4fit_mj.add( RooArgSet( rrv_mass_j ), tmp_event_weight4fit )
 
                 if tmp_jet_mass >=self.mj_sideband_lo_min and tmp_jet_mass <self.mj_sideband_lo_max:
                     hnum_4region.Fill(-1,tmp_event_weight );
@@ -3548,8 +3396,6 @@ objName ==objName_before ):
 	mplot.Print()
 
 	
-
-	
         
 
 ### funtion to run the complete alpha analysis
@@ -3578,9 +3424,7 @@ def pre_limit_simple(channel,sample,lomass,himass):
 if __name__ == '__main__':
 
     channel=options.channel;
-    #sample=options.sample; #BulkG_WW_lvjj_c0p2_M1000   
     mass=options.mass;
-    #sample = "RS1G_WW_lvjj_M%i"%(mass)
     sample = options.sample+"_M"+str(int(mass))
     
     lomass = mass - mass*15./100.;
@@ -3593,5 +3437,5 @@ if __name__ == '__main__':
         if options.category.find('HP2') != -1 or options.category.find('ALLP2') != -1:	
            pre_limit_sb_correction("method1",channel,sample,options.jetalgo,lomass,himass,40,150,700,5000,"Exp","ExpN",options.interpolate) 
 	else:
-           pre_limit_sb_correction("method1",channel,sample,options.jetalgo,lomass,himass,40,150,700,5000,"ExpN","ExpTail",options.interpolate) 
+           pre_limit_sb_correction("method1",channel,sample,options.jetalgo,lomass,himass,40,150,900,5000,"ExpN","ExpTail",options.interpolate) 
 	
