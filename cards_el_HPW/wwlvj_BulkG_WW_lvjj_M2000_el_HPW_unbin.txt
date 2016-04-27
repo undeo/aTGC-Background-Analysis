@@ -10,19 +10,19 @@ shapes VV_xww     CMS_xww_el1JHPW  wwlvj_BulkG_WW_lvjj_M2000_el_HPW_workspace.ro
 shapes data_obs   CMS_xww_el1JHPW  wwlvj_BulkG_WW_lvjj_M2000_el_HPW_workspace.root workspace4limit_:$PROCESS_xww_el_HPW
 --------------- 
 bin CMS_xww_el1JHPW 
-observation 0.00 
+observation 151.00 
 ------------------------------
 bin CMS_xww_el1JHPW CMS_xww_el1JHPW CMS_xww_el1JHPW CMS_xww_el1JHPW CMS_xww_el1JHPW
 process BulkWW_xww WJets_xww TTbar_xww STop_xww VV_xww
 process -1 1 2 3 4
-rate 0.00179 123.248 62.817 11.695 17.003 
+rate 0.00003 80.101 32.792 7.396 2.864 
 -------------------------------- 
 lumi_13TeV lnN 1.046 - 1.046 1.046 1.046
 CMS_xww_XS_BulkG_WW_13TeV lnN 1.250 - - - -
 CMS_xww_XS_STop_13TeV lnN - - - 1.050 -
 CMS_xww_XS_VV_13TeV lnN - - - - 1.030
-CMS_xww_WJ_norm_el_HPW_13TeV lnN - 1.194 - - -
-CMS_xww_Top_norm_el_HPW_13TeV lnN - - 1.070 1.070 -
+CMS_xww_WJ_norm_el_HPW_13TeV lnN - 1.279 - - -
+CMS_xww_Top_norm_el_HPW_13TeV lnN - - 1.084 1.084 -
 CMS_eff_vtag_tau21_sf_13TeV lnN 1.126/0.874 - - - 1.126/0.874
 #CMS_eff_vtag_model_13TeV lnN 1.000 - - - 1.000
 CMS_xww_trigger_e_13TeV lnN 1.010 - 1.010 1.010 1.010
@@ -42,10 +42,8 @@ Deco_WJets0_xww_sim_el_HPW_mlvj_13TeV_eig1 param 0.0 1.4
 Deco_WJets0_xww_sim_el_HPW_mlvj_13TeV_eig2 param 0.0 1.4 
 Deco_WJets0_xww_sim_el_HPW_mlvj_13TeV_eig3 param 0.0 1.4 
 Deco_TTbar_xww_signal_region_el_HPW_mlvj_13TeV_eig0 param 0.0 2.0 
-Deco_TTbar_xww_signal_region_el_HPW_mlvj_13TeV_eig1 param 0.0 2.0 
 CMS_sig_p1_scale_e_13TeV param 0.0 1.0 
 CMS_sig_p2_scale_e_13TeV param 0.0 1.0 
 CMS_sig_p1_jes_13TeV param 0.0 1.0 
 CMS_sig_p2_jes_13TeV param 0.0 1.0 
 CMS_sig_p2_jer_13TeV param 0.0 1.0 
- #WJets number of events sideband region: 278.788714393

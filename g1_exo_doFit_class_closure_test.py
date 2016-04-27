@@ -454,7 +454,7 @@ objName ==objName_before ):
     def get_canvas(self,cname,isalpha=False):
 
        #tdrstyle.setTDRStyle()
-       CMS_lumi.lumi_13TeV = "2.09 fb^{-1}"
+       CMS_lumi.lumi_13TeV = "2.3 fb^{-1}"
        CMS_lumi.writeExtraText = 1
        CMS_lumi.extraText = "preliminary"
 
@@ -516,9 +516,6 @@ objName ==objName_before ):
 
         self.leg.SetTextSize(0.031); 
         if isalpha: self.leg.SetTextSize(0.038)
-
-        #banner = self.banner4Plot();
-        #banner.Draw();
 
 	cMassFit.Update()
 	cMassFit.cd()
@@ -2507,7 +2504,7 @@ objName ==objName_before ):
 		if TString(label).Contains('Bulk'):
        			tmp_scale_to_lumi = treeIn.lumiweight
 		if TString(label).Contains("_STop") or TString(label).Contains("_WJets") or TString(label).Contains("_TTbar") or TString(label).Contains("_VV"):
-      			tmp_scale_to_lumi = treeIn.totEventWeight2 / (treeIn.puweight*(treeIn.genweight/abs(treeIn.genweight)))
+      			tmp_scale_to_lumi = treeIn.totEventWeight / (treeIn.puweight*(treeIn.genweight/abs(treeIn.genweight)))
 		if TString(label).Contains('data'):
 			tmp_scale_to_lumi = 1
 
@@ -2522,7 +2519,7 @@ objName ==objName_before ):
                 ### weigh MC events                                                        
 		#@#change weight for new trees, lumi is already taken care of in totEventWeight
 		if not 'Bulk' in label:
-                	tmp_event_weight 	= treeIn.totEventWeight2
+                	tmp_event_weight 	= treeIn.totEventWeight
 		else:
 			tmp_event_weight 	= treeIn.puweight*(treeIn.genweight/abs(treeIn.genweight))*treeIn.lumiweight
 		tmp_event_weight4fit 	= tmp_event_weight/tmp_scale_to_lumi

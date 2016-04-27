@@ -23,14 +23,13 @@ from ROOT import gROOT, TPaveLabel, gStyle, gSystem, TGaxis, TStyle, TLatex, TSt
 parser = OptionParser()
 
 parser.add_option('-c', '--channel',action="store",type="string",dest="channel",default="el")
-parser.add_option('--sample', action="store",type="string",dest="sample",default="BulkG_WW_lvjj")
-parser.add_option('--mass', action="store",type="float",dest="mass",default="2000")
 parser.add_option('-s','--simple', action='store', dest='simple', default=False, help='pre-limit in simple mode')
 parser.add_option('-b', action='store_true', dest='noX', default=True, help='no X11 windows')
 parser.add_option('--inPath', action="store",type="string",dest="inPath",default="./")
 parser.add_option('--category', action="store",type="string",dest="category",default="")
 parser.add_option('--jetalgo', action="store",type="string",dest="jetalgo",default="Mjpruned")
-parser.add_option('--interpolate', action="store_true",dest="interpolate",default=False)
+parser.add_option('--unblind', action="store_true",dest="unblind",default=False)
+parser.add_option('--closure',action="store_true",dest="closure",default=False)
 
 (options, args) = parser.parse_args()
 
@@ -42,7 +41,7 @@ from ROOT import draw_error_band, draw_error_band_extendPdf, draw_error_band_Dec
 
 class doFit_wj_and_wlvj:
 
-    def __init__(self, in_channel,in_signal_sample, jetalgo, in_mlvj_signal_region_min=500, in_mlvj_signal_region_max=700, in_mj_min=30, in_mj_max=140, in_mlvj_min=400., in_mlvj_max=1400., fit_model="ErfExp_v1", fit_model_alter="ErfPow_v1", interpolate=False, input_workspace=None):
+    def __init__(self, in_channel, jetalgo, in_mj_min=30, in_mj_max=140, in_mlvj_min=400., in_mlvj_max=1400., fit_model="ErfExp_v1", fit_model_alter="ErfPow_v1", input_workspace=None):
 
         tdrstyle.setTDRStyle()
         TGaxis.SetMaxDigits(3)
@@ -56,7 +55,6 @@ class doFit_wj_and_wlvj:
         self.MODEL_4_mlvj=fit_model;
         self.MODEL_4_mlvj_alter=fit_model_alter;
 	self.jetalgo = jetalgo
-        self.interpolate = interpolate
                 
         print "########################################################################################"
         print "######## define class: binning, variables, cuts, files and nuissance parameters ########"
@@ -119,6 +117,12 @@ class doFit_wj_and_wlvj:
 	elif (options.category).find('Z') != -1:
          self.mj_signal_min = 85
          self.mj_signal_max = 105
+
+	if options.closure:
+		self.mj_sideband_hi_min	= 125
+		self.mj_signal_min	= 105
+		self.mj_signal_max	= 125
+
 	 	    
         ## zone definition in the jet mass 
         rrv_mass_j.setRange("sb_lo",self.mj_sideband_lo_min,self.mj_sideband_lo_max);
@@ -127,23 +131,15 @@ class doFit_wj_and_wlvj:
         rrv_mass_j.setRange("sb_hi",self.mj_sideband_hi_min,self.mj_sideband_hi_max);
         rrv_mass_j.setRange("sblo_to_sbhi",self.mj_sideband_lo_min,self.mj_sideband_hi_max);
 
-        ## signal region definition in the mlvj variable in case of counting limit
-        self.mlvj_signal_min = in_mlvj_signal_region_min
-        self.mlvj_signal_max = in_mlvj_signal_region_max
-        rrv_mass_lvj.setRange("signal_region",self.mlvj_signal_min,self.mlvj_signal_max);
-        rrv_mass_lvj.setRange("high_mass",2500,in_mlvj_max);
+	## one zone for MWW
+	rrv_mass_lvj.setRange("total_region",in_mlvj_min,in_mlvj_max)
 
         #prepare the data and mc files --> set the working directory and the files name
         self.file_Directory="AnaSigTree_25ns/"+self.channel+"/";
                  
         #prepare background data and signal samples            
-        self.signal_sample=in_signal_sample;
 
         self.file_data = ("treeEDBR_data_xww.root");#keep blind!!!!
-
-        self.file_pseudodata = ("treeEDBR_allBkg_xww_3fb.root");#fake data
-
-        self.file_signal     = ("treeEDBR_%s_xww.root"%(self.signal_sample));
 
         self.file_WJets0_mc  = ("treeEDBR_WJets_xww.root");
 
@@ -153,75 +149,35 @@ class doFit_wj_and_wlvj:
 
         self.file_STop_mc    = ("treeEDBR_SingleTop_xww.root");
 
-        ## event categorization as a function of the purity and the applied selection
-        self.wtagger_label = options.category;
 
-        self.categoryID=-1;
-        if self.channel=="el" and self.wtagger_label.find("HP") != -1:
-           self.categoryID=0;
-           if self.wtagger_label.find("0") != -1: self.categoryID=6;
-           elif self.wtagger_label.find("1") != -1: self.categoryID=8;
-           elif self.wtagger_label.find("2") != -1: self.categoryID=10;
-	if self.channel=="mu" and self.wtagger_label.find("HP") != -1:
-	   self.categoryID=1;
-           if self.wtagger_label.find("0") != -1: self.categoryID=7;
-           elif self.wtagger_label.find("1") != -1: self.categoryID=9;
-           elif self.wtagger_label.find("2") != -1: self.categoryID=11;
-	if self.channel=="el" and self.wtagger_label.find("LP") != -1:
-	   self.categoryID=2;
-           if self.wtagger_label.find("0") != -1: self.categoryID=12;
-           elif self.wtagger_label.find("1") != -1: self.categoryID=14;
-           elif self.wtagger_label.find("2") != -1: self.categoryID=16;
-	if self.channel=="mu" and self.wtagger_label.find("LP") != -1:
-	   self.categoryID=3;
-           if self.wtagger_label.find("0") != -1: self.categoryID=13;
-           elif self.wtagger_label.find("1") != -1: self.categoryID=15;
-           elif self.wtagger_label.find("2") != -1: self.categoryID=17;
-
-        '''if self.channel=="mu" and self.wtagger_label.find("HP") != -1:
-            self.rrv_wtagger_eff_reweight_forT=RooRealVar("rrv_wtagger_eff_reweight_forT","rrv_wtagger_eff_reweight_forT", 0.872);
-            self.rrv_wtagger_eff_reweight_forT.setError(0.040);
-            self.rrv_wtagger_eff_reweight_forV=RooRealVar("rrv_wtagger_eff_reweight_forV","rrv_wtagger_eff_reweight_forV",1.031);
-            self.rrv_wtagger_eff_reweight_forV.setError(0.126);
-        if self.channel=="el" and self.wtagger_label.find("HP") != -1:
-            self.rrv_wtagger_eff_reweight_forT=RooRealVar("rrv_wtagger_eff_reweight_forT","rrv_wtagger_eff_reweight_forT", 0.833);
-            self.rrv_wtagger_eff_reweight_forT.setError(0.070);
-            self.rrv_wtagger_eff_reweight_forV=RooRealVar("rrv_wtagger_eff_reweight_forV","rrv_wtagger_eff_reweight_forV",1.031);
-            self.rrv_wtagger_eff_reweight_forV.setError(0.126);'''
-        if self.channel=="mu" and self.wtagger_label.find("HP") != -1:
-            self.rrv_wtagger_eff_reweight_forT=RooRealVar("rrv_wtagger_eff_reweight_forT","rrv_wtagger_eff_reweight_forT", 1.);
-            self.rrv_wtagger_eff_reweight_forT.setError(0.040);
-            self.rrv_wtagger_eff_reweight_forV=RooRealVar("rrv_wtagger_eff_reweight_forV","rrv_wtagger_eff_reweight_forV",1.);
-            self.rrv_wtagger_eff_reweight_forV.setError(0.126);
-        if self.channel=="el" and self.wtagger_label.find("HP") != -1:
-            self.rrv_wtagger_eff_reweight_forT=RooRealVar("rrv_wtagger_eff_reweight_forT","rrv_wtagger_eff_reweight_forT", 1.);
-            self.rrv_wtagger_eff_reweight_forT.setError(0.070);
-            self.rrv_wtagger_eff_reweight_forV=RooRealVar("rrv_wtagger_eff_reweight_forV","rrv_wtagger_eff_reweight_forV",1.);
-            self.rrv_wtagger_eff_reweight_forV.setError(0.126);
-
-
-
-
-        print "wtagger efficiency correction for Top sample: %s +/- %s"%(self.rrv_wtagger_eff_reweight_forT.getVal(), self.rrv_wtagger_eff_reweight_forT.getError());
-        print "wtagger efficiency correction for V sample: %s +/- %s"%(self.rrv_wtagger_eff_reweight_forV.getVal(), self.rrv_wtagger_eff_reweight_forV.getError());
         
         self.mean_shift = -0.8
         self.sigma_scale=1.086
+
+	self.wtagger_label	= options.category
         
-	self.plotsDir = 'plots_%s_%s' %(self.channel,self.wtagger_label)
+	if options.closure:
+		self.plotsDir = 'plots_%s_closure' %(self.channel)
+		if not os.path.isdir("cards_%s_closure"%(self.channel)):
+            		os.system("mkdir cards_%s_closure"%(self.channel));
+		self.rlt_DIR="cards_%s_closure/"%(self.channel)
+	else:
+		self.plotsDir = 'plots_%s_%s' %(self.channel,self.wtagger_label)
+		if not os.path.isdir("cards_%s_%s"%(self.channel,self.wtagger_label)):
+            		os.system("mkdir cards_%s_%s"%(self.channel,self.wtagger_label));
+		self.rlt_DIR="cards_%s_%s/"%(self.channel,self.wtagger_label)
+
         #result files: The event number, parameters and error write into a txt file. The dataset and pdfs write into a root file
-        if not os.path.isdir("cards_%s_%s"%(self.channel,self.wtagger_label)):
-            os.system("mkdir cards_%s_%s"%(self.channel,self.wtagger_label));
-        self.rlt_DIR="cards_%s_%s/"%(self.channel,self.wtagger_label)
+
 
         ## extra text file
-        self.file_rlt_txt = self.rlt_DIR+"other_wwlvj_%s_%s_%s.txt"%(self.signal_sample,self.channel,self.wtagger_label)
+        self.file_rlt_txt = self.rlt_DIR+"other_wwlvj_%s_%s.txt"%(self.channel,self.wtagger_label)
         ## workspace for limit
-        self.file_rlt_root = self.rlt_DIR+"wwlvj_%s_%s_%s_workspace.root"%(self.signal_sample,self.channel,self.wtagger_label)
+        self.file_rlt_root = self.rlt_DIR+"wwlvj_%s_%s_workspace.root"%(self.channel,self.wtagger_label)
         ## datacard for the ubninned limit
-        self.file_datacard_unbin = self.rlt_DIR+"wwlvj_%s_%s_%s_unbin.txt"%(self.signal_sample,self.channel,self.wtagger_label)
+        self.file_datacard_unbin = self.rlt_DIR+"wwlvj_%s_%s_unbin.txt"%(self.channel,self.wtagger_label)
         ## workspace for the binned limit
-        self.file_datacard_counting = self.rlt_DIR+"wwlvj_%s_%s_%s_counting.txt"%(self.signal_sample,self.channel,self.wtagger_label)
+        self.file_datacard_counting = self.rlt_DIR+"wwlvj_%s_%s_counting.txt"%(self.channel,self.wtagger_label)
         
         self.file_out=open(self.file_rlt_txt,"w");
         self.file_out.write("Welcome:\n");
@@ -279,10 +235,7 @@ class doFit_wj_and_wlvj:
         self.eff_vtag_model = 0. ;
         self.eff_vtag_mass_sf = 0.;
 
-        self.uncertainties(self.signal_sample)
 	self.xs_rescale = 0.01 
-        if (self.interpolate):
-            self.xs_rescale = 1.
 	                            
         #### sigma and mean signal systematic inflation
         self.mean_signal_uncertainty_jet_scale  = 0.013 ;
@@ -518,9 +471,6 @@ objName ==objName_before ):
         self.leg.SetTextSize(0.031); 
         if isalpha: self.leg.SetTextSize(0.038)
 
-        #banner = self.banner4Plot();
-        #banner.Draw();
-
 	cMassFit.Update()
 	cMassFit.cd()
 	CMS_lumi.CMS_lumi(cMassFit, 4, 11)	
@@ -532,7 +482,7 @@ objName ==objName_before ):
 	cMassFit.cd()
 	cMassFit.Update()
 	        
-        Directory=TString(in_directory+self.signal_sample); #+"_%02d_%02d/"%(options.cprime,options.BRnew));
+        Directory=TString(in_directory); #+"_%02d_%02d/"%(options.cprime,options.BRnew));
         if not Directory.EndsWith("/"):Directory=Directory.Append("/");
         if not os.path.isdir(Directory.Data()):
               os.system("mkdir -p "+Directory.Data());
@@ -643,7 +593,7 @@ objName ==objName_before ):
 	cMassFit.Update()
 			
         ## create the directory where store the plots
-        Directory = TString(in_directory+self.signal_sample);
+        Directory = TString(in_directory);
         if not Directory.EndsWith("/"):Directory = Directory.Append("/");
         if not os.path.isdir(Directory.Data()):
               os.system("mkdir -p "+Directory.Data());
@@ -868,7 +818,7 @@ objName ==objName_before ):
         return self.workspace4fit_.pdf("model%s_%s_mj"%(label,self.channel))
 
     ### fix a given model taking the label, and the region --> for extended pdf --> all the parameter of the pdf + normalization
-    def fix_Model(self, label, mlvj_region="_signal_region",mass_spectrum="_mlvj"):
+    def fix_Model(self, label, mlvj_region="total_region",mass_spectrum="_mlvj"):
         print "########### Fixing an Extended Pdf for mlvj  ############"        
         rdataset = self.workspace4fit_.data("rdataset%s%s_%s%s"%(label,mlvj_region,self.channel,mass_spectrum))
         model = self.get_mlvj_Model(label,mlvj_region);
@@ -893,159 +843,10 @@ objName ==objName_before ):
             param=par.Next()
 
 
-#############
-
-    #### Method to make a RooAbsPdf setting parameters from external interpolation (available only for DoubleCB)    
-    def make_Pdf_from_interpolation(self, label, in_model_name, mass_spectrum="_mj", ConstraintsList=[],ismc = 0):
-        if TString(mass_spectrum).Contains("_mj"): rrv_x = self.workspace4fit_.var("rrv_mass_j");
-        if TString(mass_spectrum).Contains("_mlvj"): rrv_x = self.workspace4fit_.var("rrv_mass_lvj");
-
-        ## Crystal  ball shape for Bulk GR samples and higgs 
-        if in_model_name == "DoubleCB_v1":
-            label_tstring=TString(label);
-
-            fileIn_name = TString("interpolationFiles/"+options.sample+"_"+self.channel+"_"+options.category+".root")#str(int(options.mass)));
-            print "open file for interpolation of DoubleCB shape: ",fileIn_name
-
-            fileIn = TFile(fileIn_name.Data());
-            g_mean = fileIn.Get("mean");
-            g_sigma = fileIn.Get("sigma");
-            g_n1 = fileIn.Get("n1");
-            g_n2 = fileIn.Get("n2");
-            g_alpha1 = fileIn.Get("alpha1");
-            g_alpha2 = fileIn.Get("alpha2");
-
-            print "########### Double CB for Bulk graviton mlvj ############"
-#            if label_tstring.Contains("RS1G_WW" or label_tstring.Contains("BulkG_WW") or label_tstring.Contains("Wprime_WZ")):
-            rrv_mean_CB  = RooRealVar("rrv_mean_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_mean_CB"+label+"_"+self.channel+"_"+self.wtagger_label, g_mean.Eval(int(options.mass)));
-            rrv_sigma_CB = RooRealVar("rrv_sigma_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_sigma_CB"+label+"_"+self.channel+"_"+self.wtagger_label, g_sigma.Eval(int(options.mass)));
-            rrv_n1_CB     = RooRealVar("rrv_n1_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_n1_CB"+label+"_"+self.channel+"_"+self.wtagger_label, g_n1.Eval(int(options.mass)));
-            rrv_alpha2_CB = RooRealVar("rrv_alpha2_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_alpha2_CB"+label+"_"+self.channel+"_"+self.wtagger_label,g_alpha2.Eval(int(options.mass)));
-            rrv_n2_CB     = RooRealVar("rrv_n2_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_n2_CB"+label+"_"+self.channel+"_"+self.wtagger_label,g_n2.Eval(int(options.mass)));
-            rrv_alpha1_CB = RooRealVar("rrv_alpha1_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_alpha1_CB"+label+"_"+self.channel+"_"+self.wtagger_label,g_alpha1.Eval(int(options.mass)));
-
-            rrv_mean_CB.Print()
-            rrv_sigma_CB.Print()
-            rrv_n1_CB.Print()
-            rrv_n2_CB.Print()
-            rrv_alpha1_CB.Print()
-            rrv_alpha2_CB.Print()
-                         
-            rrv_mean_scale_p1 = RooRealVar("CMS_sig_p1_jes_13TeV","CMS_sig_p1_jes_13TeV",0);
-            rrv_mean_scale_p1.setConstant(kTRUE);
-            if self.channel == "mu" :             
-             rrv_mean_scale_p2 = RooRealVar("CMS_sig_p1_scale_m_13TeV","CMS_sig_p1_scale_m_13TeV",0);
-             rrv_mean_scale_p2.setConstant(kTRUE);
-            elif self.channel == "el" :
-             rrv_mean_scale_p2 = RooRealVar("CMS_sig_p1_scale_e_13TeV","CMS_sig_p1_scale_e_13TeV",0);
-             rrv_mean_scale_p2.setConstant(kTRUE);
-            elif self.channel == "em":
-             rrv_mean_scale_p2 = RooRealVar("CMS_sig_p1_scale_em_13TeV","CMS_sig_p1_scale_em_13TeV",0);
-             rrv_mean_scale_p2.setConstant(kTRUE);
-                
-            rrv_mean_scale_X1 = RooRealVar("rrv_mean_shift_scale_lep"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_mean_shift_scale_lep"+label+"_"+self.channel+"_"+self.wtagger_label,float(self.mean_signal_uncertainty_lep_scale));
-            rrv_mean_scale_X1.setConstant(kTRUE);
-            rrv_mean_scale_X2 = RooRealVar("rrv_mean_shift_scale_jes"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_mean_shift_scale_jes"+label+"_"+self.channel+"_"+self.wtagger_label,float(self.mean_signal_uncertainty_jet_scale));
-            rrv_mean_scale_X2.setConstant(kTRUE);
-
-            rrv_total_mean_CB = RooFormulaVar("rrv_total_mean_CB"+label+"_"+self.channel,"@0*(1+@1*@2)*(1+@3*@4)", RooArgList(rrv_mean_CB,rrv_mean_scale_p1,rrv_mean_scale_X1,rrv_mean_scale_p2,rrv_mean_scale_X2));
-            
-            if self.channel == "mu":
-             rrv_sigma_scale_p1 = RooRealVar("CMS_sig_p2_scale_m_13TeV","CMS_sig_p2_scale_m_13TeV",0);
-             rrv_sigma_scale_p1.setConstant(kTRUE);
-            elif self.channel == "el":
-             rrv_sigma_scale_p1 = RooRealVar("CMS_sig_p2_scale_e_13TeV","CMS_sig_p2_scale_e_13TeV",0);
-             rrv_sigma_scale_p1.setConstant(kTRUE);
-            elif self.channel == "em":
-             rrv_sigma_scale_p1 = RooRealVar("CMS_sig_p2_scale_em_13TeV","CMS_sig_p2_scale_em_13TeV",0);
-             rrv_sigma_scale_p1.setConstant(kTRUE);
-                         
-            rrv_sigma_scale_p2 = RooRealVar("CMS_sig_p2_jer_13TeV","CMS_sig_p2_jer_13TeV",0);
-            rrv_sigma_scale_p3 = RooRealVar("CMS_sig_p2_jes_13TeV","CMS_sig_p2_jes_13TeV",0);
-            rrv_sigma_scale_p2.setConstant(kTRUE);
-            rrv_sigma_scale_p3.setConstant(kTRUE);
-
-            rrv_mean_sigma_X1 = RooRealVar("rrv_sigma_shift_lep_scale"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_sigma_shift_scale"+label+"_"+self.channel+"_"+self.wtagger_label,float(self.sigma_signal_uncertainty_lep_scale));
-            rrv_mean_sigma_X2 = RooRealVar("rrv_sigma_shift_jes"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_sigma_shift_scale"+label+"_"+self.channel+"_"+self.wtagger_label,float(self.sigma_signal_uncertainty_jet_scale));
-            rrv_mean_sigma_X3 = RooRealVar("rrv_sigma_shift_res"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_sigma_shift_res"+label+"_"+self.channel+"_"+self.wtagger_label,float(self.sigma_signal_uncertainty_jet_res));
-            rrv_mean_sigma_X1.setConstant(kTRUE);
-            rrv_mean_sigma_X2.setConstant(kTRUE);
-            rrv_mean_sigma_X3.setConstant(kTRUE);
-
-            rrv_total_sigma_CB = RooFormulaVar("rrv_total_sigma_CB"+label+"_"+self.channel,"@0*(1+@1*@2)*(1+@3*@4)*(1+@5*@6)", RooArgList(rrv_sigma_CB,rrv_sigma_scale_p1,rrv_mean_sigma_X1,rrv_sigma_scale_p2,rrv_mean_sigma_X2,rrv_sigma_scale_p3,rrv_mean_sigma_X3));        
-
-            model_pdf = ROOT.RooDoubleCrystalBall("model_pdf"+label+"_"+self.channel+mass_spectrum,"model_pdf"+label+"_"+self.channel+mass_spectrum, rrv_x,rrv_total_mean_CB,rrv_total_sigma_CB,rrv_alpha1_CB,rrv_n1_CB,rrv_alpha2_CB,rrv_n2_CB);
-
-            
-        ## return the pdf
-        getattr(self.workspace4fit_,"import")(model_pdf)
-        return self.workspace4fit_.pdf("model_pdf"+label+"_"+self.channel+mass_spectrum)
-
-###########
-
     #### Method to make a RooAbsPdf giving label, model name, spectrum, if it is mc or not and a constraint list for the parameters          
     def make_Pdf(self, label, in_model_name, mass_spectrum="_mj", ConstraintsList=[],ismc = 0):
         if TString(mass_spectrum).Contains("_mj"): rrv_x = self.workspace4fit_.var("rrv_mass_j");
         if TString(mass_spectrum).Contains("_mlvj"): rrv_x = self.workspace4fit_.var("rrv_mass_lvj");
-
-        ## Crystal  ball shape for Bulk GR samples and higgs 
-        if in_model_name == "DoubleCB_v1":
-            label_tstring=TString(label);
-            print "########### Double CB for Bulk graviton mlvj ############"                                                                  
-            if label_tstring.Contains("M2000") and (label_tstring.Contains("RS1G_WW") or label_tstring.Contains("BulkG_WW") or label_tstring.Contains("Wprime_WZ")):
-                    rrv_mean_CB  = RooRealVar("rrv_mean_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_mean_CB"+label+"_"+self.channel+"_"+self.wtagger_label,2000,1900,2100);
-                    rrv_sigma_CB = RooRealVar("rrv_sigma_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_sigma_CB"+label+"_"+self.channel+"_"+self.wtagger_label,50,40,70);
-                    rrv_n1_CB     = RooRealVar("rrv_n1_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_n1_CB"+label+"_"+self.channel+"_"+self.wtagger_label, 15.,5.,25.);
-                    rrv_alpha2_CB = RooRealVar("rrv_alpha2_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_alpha2_CB"+label+"_"+self.channel+"_"+self.wtagger_label,1.64,1.,1.9);
-                    rrv_n2_CB     = RooRealVar("rrv_n2_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_n2_CB"+label+"_"+self.channel+"_"+self.wtagger_label,15.,5.,25.);
-                    rrv_alpha1_CB = RooRealVar("rrv_alpha1_CB"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_alpha1_CB"+label+"_"+self.channel+"_"+self.wtagger_label,1.5,1.,1.9);
-
-
-
-            rrv_mean_scale_p1 = RooRealVar("CMS_sig_p1_jes_13TeV","CMS_sig_p1_jes_13TeV",0);
-            rrv_mean_scale_p1.setConstant(kTRUE);
-            if self.channel == "mu" :             
-             rrv_mean_scale_p2 = RooRealVar("CMS_sig_p1_scale_m_13TeV","CMS_sig_p1_scale_m_13TeV",0);
-             rrv_mean_scale_p2.setConstant(kTRUE);
-            elif self.channel == "el" :
-             rrv_mean_scale_p2 = RooRealVar("CMS_sig_p1_scale_e_13TeV","CMS_sig_p1_scale_e_13TeV",0);
-             rrv_mean_scale_p2.setConstant(kTRUE);
-            elif self.channel == "em":
-             rrv_mean_scale_p2 = RooRealVar("CMS_sig_p1_scale_em_13TeV","CMS_sig_p1_scale_em_13TeV",0);
-             rrv_mean_scale_p2.setConstant(kTRUE);
-                
-            rrv_mean_scale_X1 = RooRealVar("rrv_mean_shift_scale_lep"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_mean_shift_scale_lep"+label+"_"+self.channel+"_"+self.wtagger_label,float(self.mean_signal_uncertainty_lep_scale));
-            rrv_mean_scale_X1.setConstant(kTRUE);
-            rrv_mean_scale_X2 = RooRealVar("rrv_mean_shift_scale_jes"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_mean_shift_scale_jes"+label+"_"+self.channel+"_"+self.wtagger_label,float(self.mean_signal_uncertainty_jet_scale));
-            rrv_mean_scale_X2.setConstant(kTRUE);
-
-            rrv_total_mean_CB = RooFormulaVar("rrv_total_mean_CB"+label+"_"+self.channel,"@0*(1+@1*@2)*(1+@3*@4)", RooArgList(rrv_mean_CB,rrv_mean_scale_p1,rrv_mean_scale_X1,rrv_mean_scale_p2,rrv_mean_scale_X2));
-            
-            if self.channel == "mu":
-             rrv_sigma_scale_p1 = RooRealVar("CMS_sig_p2_scale_m_13TeV","CMS_sig_p2_scale_m_13TeV",0);
-             rrv_sigma_scale_p1.setConstant(kTRUE);
-            elif self.channel == "el":
-             rrv_sigma_scale_p1 = RooRealVar("CMS_sig_p2_scale_e_13TeV","CMS_sig_p2_scale_e_13TeV",0);
-             rrv_sigma_scale_p1.setConstant(kTRUE);
-            elif self.channel == "em":
-             rrv_sigma_scale_p1 = RooRealVar("CMS_sig_p2_scale_em_13TeV","CMS_sig_p2_scale_em_13TeV",0);
-             rrv_sigma_scale_p1.setConstant(kTRUE);
-                         
-            rrv_sigma_scale_p2 = RooRealVar("CMS_sig_p2_jer_13TeV","CMS_sig_p2_jer_13TeV",0);
-            rrv_sigma_scale_p3 = RooRealVar("CMS_sig_p2_jes_13TeV","CMS_sig_p2_jes_13TeV",0);
-            rrv_sigma_scale_p2.setConstant(kTRUE);
-            rrv_sigma_scale_p3.setConstant(kTRUE);
-
-            rrv_mean_sigma_X1 = RooRealVar("rrv_sigma_shift_lep_scale"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_sigma_shift_scale"+label+"_"+self.channel+"_"+self.wtagger_label,float(self.sigma_signal_uncertainty_lep_scale));
-            rrv_mean_sigma_X2 = RooRealVar("rrv_sigma_shift_jes"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_sigma_shift_scale"+label+"_"+self.channel+"_"+self.wtagger_label,float(self.sigma_signal_uncertainty_jet_scale));
-            rrv_mean_sigma_X3 = RooRealVar("rrv_sigma_shift_res"+label+"_"+self.channel+"_"+self.wtagger_label,"rrv_sigma_shift_res"+label+"_"+self.channel+"_"+self.wtagger_label,float(self.sigma_signal_uncertainty_jet_res));
-            rrv_mean_sigma_X1.setConstant(kTRUE);
-            rrv_mean_sigma_X2.setConstant(kTRUE);
-            rrv_mean_sigma_X3.setConstant(kTRUE);
-
-            rrv_total_sigma_CB = RooFormulaVar("rrv_total_sigma_CB"+label+"_"+self.channel,"@0*(1+@1*@2)*(1+@3*@4)*(1+@5*@6)", RooArgList(rrv_sigma_CB,rrv_sigma_scale_p1,rrv_mean_sigma_X1,rrv_sigma_scale_p2,rrv_mean_sigma_X2,rrv_sigma_scale_p3,rrv_mean_sigma_X3));        
-
-            model_pdf = ROOT.RooDoubleCrystalBall("model_pdf"+label+"_"+self.channel+mass_spectrum,"model_pdf"+label+"_"+self.channel+mass_spectrum, rrv_x,rrv_total_mean_CB,rrv_total_sigma_CB,rrv_alpha1_CB,rrv_n1_CB,rrv_alpha2_CB,rrv_n2_CB);
 
         ## ExpN pdf for W+jets bkg fit
         if in_model_name == "ExpN":
@@ -1246,7 +1047,7 @@ objName ==objName_before ):
 
 
     ### Define the Extended Pdf for and mJ fit giving: label, fit model name, list constraint and ismc
-    def make_Model(self, label, in_model_name, mass_spectrum="_mj", ConstraintsList=[], ismc_wjet=0, area_init_value=500, interpolate=0):
+    def make_Model(self, label, in_model_name, mass_spectrum="_mj", ConstraintsList=[], ismc_wjet=0, area_init_value=500):
 
       ##### define an extended pdf from a standard Roofit One
       print " "
@@ -1256,21 +1057,8 @@ objName ==objName_before ):
       print " "
 
       ## call the make RooAbsPdf method
-      if (interpolate==1):
-          fileIn_name = TString("interpolationFiles/"+options.sample+"_"+self.channel+"_"+options.category+".root")#str(int(options.mass)));
-          print "open file for interpolation of datacard rate: ",fileIn_name
-
-          fileIn = TFile(fileIn_name.Data());
-          g_Ndatacard = fileIn.Get("Ndatacard");
-          print "extrapolated value: ",g_Ndatacard.Eval(int(options.mass))
-
-          rrv_number = RooRealVar("rrv_number"+label+"_"+self.channel+mass_spectrum,"rrv_number"+label+"_"+self.channel+mass_spectrum,g_Ndatacard.Eval(int(options.mass)));
-          print "extrapolated rate from datacards:"
-          rrv_number.Print()
-          model_pdf = self.make_Pdf_from_interpolation(label,in_model_name,mass_spectrum,ConstraintsList,ismc_wjet)
-      else:
-          rrv_number = RooRealVar("rrv_number"+label+"_"+self.channel+mass_spectrum,"rrv_number"+label+"_"+self.channel+mass_spectrum,area_init_value,0.,1e7);
-          model_pdf = self.make_Pdf(label,in_model_name,mass_spectrum,ConstraintsList,ismc_wjet)
+      rrv_number = RooRealVar("rrv_number"+label+"_"+self.channel+mass_spectrum,"rrv_number"+label+"_"+self.channel+mass_spectrum,area_init_value,0.,1e7);
+      model_pdf = self.make_Pdf(label,in_model_name,mass_spectrum,ConstraintsList,ismc_wjet)
       print "######## Model Pdf ########"        
       model_pdf.Print();
       rrv_number.Print();
@@ -1420,24 +1208,18 @@ objName ==objName_before ):
         self.get_WJets_mlvj_correction_sb_lo_to_signal_region(label,mlvj_model);
 
         ### Fix the pdf of signal, TTbar, STop and VV in the signal region 
-        if (options.interpolate == False):
-            self.fix_Model("_%s_xww"%(self.signal_sample),"_signal_region","_mlvj")
         self.fix_Model("_TTbar_xww","_signal_region","_mlvj")
         self.fix_Model("_STop_xww","_signal_region","_mlvj")
         self.fix_Model("_VV_xww","_signal_region","_mlvj")
 
-        ### Call the evaluation of the normalization in the signal region for signal, TTbar, VV, STop, and WJets after the extrapolation via alpha
-        if (options.interpolate == True):
-            self.get_mlvj_normalization_insignalregion("_%s_xww"%(self.signal_sample),"",1);
-        else:
-            self.get_mlvj_normalization_insignalregion("_%s_xww"%(self.signal_sample));
+        ### Call the evaluation of the normalization in the signal region for TTbar, VV, STop, and WJets after the extrapolation via alpha
         self.get_mlvj_normalization_insignalregion("_TTbar_xww");
         self.get_mlvj_normalization_insignalregion("_STop_xww");
         self.get_mlvj_normalization_insignalregion("_VV_xww");
         self.get_mlvj_normalization_insignalregion(label,"model_pdf%s_signal_region_%s_after_correct_mlvj"%(label,self.channel));    
 
     ##### Function that calculate the normalization inside the mlvj signal region (mass window around the resonance in order to fill datacards)
-    def get_mlvj_normalization_insignalregion(self, label, model_name="", interpolate=0):
+    def get_mlvj_normalization_insignalregion(self, label, model_name=""):
         
         print "############### get mlvj normalization inside SR ",label," ",model_name," ##################"
         if model_name == "":
@@ -1458,43 +1240,30 @@ objName ==objName_before ):
         ## integal in the signal region
         print "######### integral in SR: ",label+"signalInt=%s"%(signalInt_val)
 
-        if (interpolate==0):
-            print "####### Events Number in MC Dataset:"
-            self.workspace4fit_.var("rrv_number_dataset_signal_region"+label+"_"+self.channel+"_mlvj").Print();
-            self.workspace4fit_.var("rrv_number_dataset_AllRange"+label+"_"+self.channel+"_mlvj").Print();
-            print "########## Events Number get from fit:"
-            rrv_tmp=self.workspace4fit_.var("rrv_number"+label+"_signal_region"+"_"+self.channel+"_mlvj");
-            print "Events Number in Signal Region from fitting: %s"%(rrv_tmp.getVal()*signalInt_val)
-        else:
-            rrv_tmp=self.workspace4fit_.var("rrv_number"+label+"_signal_region"+"_"+self.channel+"_mlvj");
-            print "Events Number in Signal Region from fitting: %s"%(rrv_tmp.getVal())
+        print "####### Events Number in MC Dataset:"
+        self.workspace4fit_.var("rrv_number_dataset_signal_region"+label+"_"+self.channel+"_mlvj").Print();
+        self.workspace4fit_.var("rrv_number_dataset_AllRange"+label+"_"+self.channel+"_mlvj").Print();
+        print "########## Events Number get from fit:"
+        rrv_tmp=self.workspace4fit_.var("rrv_number"+label+"_signal_region"+"_"+self.channel+"_mlvj");
+        print "Events Number in Signal Region from fitting: %s"%(rrv_tmp.getVal()*signalInt_val)
 
         #### store the info in the output file
         self.file_out.write( "\n%s++++++++++++++++++++++++++++++++++++"%(label) )
-        if (interpolate==0):
-            self.file_out.write( "\nEvents Number in All Region from dataset : %s"%(self.workspace4fit_.var("rrv_number_dataset_AllRange"+label+"_"+self.channel+"_mlvj").getVal()) )
-            self.file_out.write( "\nEvents Number in Signal Region from dataset: %s"%(self.workspace4fit_.var("rrv_number_dataset_signal_region"+label+"_"+self.channel+"_mlvj").getVal()) )
-            self.file_out.write( "\nRatio signal_region/all_range from dataset :%s"%(self.workspace4fit_.var("rrv_number_dataset_signal_region"+label+"_"+self.channel+"_mlvj").getVal()/self.workspace4fit_.var("rrv_number_dataset_AllRange"+label+"_"+self.channel+"_mlvj").getVal() ) )
-            self.file_out.write( "\nEvents Number in All Region from fitting : %s\n"%(rrv_tmp.getVal()) )
-            self.file_out.write( "\nEvents Number in Signal Region from fitting: %s\n"%(rrv_tmp.getVal()*signalInt_val) )
-            self.file_out.write( "\nEvents Number in High Mass Region from fitting: %s\n"%(rrv_tmp.getVal()*highMassInt_val) )
-            self.file_out.write( "\nRatio signal_region/all_range from fitting :%s"%(signalInt_val ) )
-        else:
-            self.file_out.write( "\nEvents Number in Signal Region from fitting: %s\n"%(rrv_tmp.getVal()) )
+        self.file_out.write( "\nEvents Number in All Region from dataset : %s"%(self.workspace4fit_.var("rrv_number_dataset_AllRange"+label+"_"+self.channel+"_mlvj").getVal()) )
+        self.file_out.write( "\nEvents Number in Signal Region from dataset: %s"%(self.workspace4fit_.var("rrv_number_dataset_signal_region"+label+"_"+self.channel+"_mlvj").getVal()) )
+        self.file_out.write( "\nRatio signal_region/all_range from dataset :%s"%(self.workspace4fit_.var("rrv_number_dataset_signal_region"+label+"_"+self.channel+"_mlvj").getVal()/self.workspace4fit_.var("rrv_number_dataset_AllRange"+label+"_"+self.channel+"_mlvj").getVal() ) )
+        self.file_out.write( "\nEvents Number in All Region from fitting : %s\n"%(rrv_tmp.getVal()) )
+        self.file_out.write( "\nEvents Number in Signal Region from fitting: %s\n"%(rrv_tmp.getVal()*signalInt_val) )
+        self.file_out.write( "\nEvents Number in High Mass Region from fitting: %s\n"%(rrv_tmp.getVal()*highMassInt_val) )
+        self.file_out.write( "\nRatio signal_region/all_range from fitting :%s"%(signalInt_val ) )
 
 #LUCA
-        if (interpolate==0):            
-            if not self.workspace4fit_.var("rrv_number_fitting_signal_region"+label+"_"+self.channel+"_mlvj"):
-                rrv_number_fitting_signal_region_mlvj = RooRealVar("rrv_number_fitting_signal_region"+label+"_"+self.channel+"_mlvj","rrv_number_fitting_signal_region"+label+"_"+
-                                                                self.channel+"_mlvj", rrv_tmp.getVal()*signalInt_val );
-                getattr(self.workspace4fit_,"import")(rrv_number_fitting_signal_region_mlvj);
-            else :
-                self.workspace4fit_.var("rrv_number_fitting_signal_region"+label+"_"+self.channel+"_mlvj").setVal(rrv_tmp.getVal()*signalInt_val);
+        if not self.workspace4fit_.var("rrv_number_fitting_signal_region"+label+"_"+self.channel+"_mlvj"):
+            rrv_number_fitting_signal_region_mlvj = RooRealVar("rrv_number_fitting_signal_region"+label+"_"+self.channel+"_mlvj","rrv_number_fitting_signal_region"+label+"_"+self.channel+"_mlvj", rrv_tmp.getVal()*signalInt_val );
+            getattr(self.workspace4fit_,"import")(rrv_number_fitting_signal_region_mlvj);
+        else :
+            self.workspace4fit_.var("rrv_number_fitting_signal_region"+label+"_"+self.channel+"_mlvj").setVal(rrv_tmp.getVal()*signalInt_val);
 
-        else:
-                rrv_number_fitting_signal_region_mlvj = RooRealVar("rrv_number_fitting_signal_region"+label+"_"+self.channel+"_mlvj","rrv_number_fitting_signal_region"+label+"_"+
-                                                                self.channel+"_mlvj", rrv_tmp.getVal() );
-                getattr(self.workspace4fit_,"import")(rrv_number_fitting_signal_region_mlvj);
 
         self.workspace4fit_.var("rrv_number_fitting_signal_region"+label+"_"+self.channel+"_mlvj").Print();
 
@@ -1934,20 +1703,7 @@ objName ==objName_before ):
         model_VV    = self.get_VV_mj_Model("_VV_xww"+massscale);
 
 	model_TTbar.Print()
-#	nttbartot = self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel))
-#	rrv_mass_j.setRange(40,65)
-#	integral = model_TTbar.createIntegral(RooArgSet(rrv_mass_j))
-#	print integral.getVal()
-#	rrv_mass_j.setRange(65,105)
-#	integral = model_TTbar.createIntegral(RooArgSet(rrv_mass_j))
-#	print integral.getVal()
-#	rrv_mass_j.setRange(105,150)
-#	integral = model_TTbar.createIntegral(RooArgSet(rrv_mass_j))
-#	print integral.getVal()
 	
-#	print str(self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).getVal())
-	
-		
 	#@#errorTTbar 
         ## only two parameters are fix, offset and width, while the exp is floating , otherwise if shape different User1 or ErfExp everything is flaoting
         model_WJets = self.get_WJets_mj_Model(label);
@@ -1986,8 +1742,6 @@ objName ==objName_before ):
 	print 'realtive error of ttbar-normalization: ' + str(self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).getError() / self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).getVal())
 
         rfresult.covarianceMatrix().Print();
-	print mean.getVal()
-	
 
         ## Total numver of event 
         rrv_number_data_mj = RooRealVar("rrv_number_data_xww%s_%s_mj"%(massscale,self.channel),"rrv_number_data_xww%s_%s_mj"%(massscale,self.channel),
@@ -2063,9 +1817,10 @@ objName ==objName_before ):
             mplot_pull=self.get_pull(rrv_mass_j,mplot);
 
             ### signal window zone with vertical lines
-            lowerLine = TLine(65,0.,65,mplot.GetMaximum()); lowerLine.SetLineWidth(1); lowerLine.SetLineColor(kBlack); lowerLine.SetLineStyle(7);
-            middleLine = TLine(85,0.,85,mplot.GetMaximum()); middleLine.SetLineWidth(1); middleLine.SetLineColor(kBlack); middleLine.SetLineStyle(7);
-            upperLine = TLine(105,0.,105,mplot.GetMaximum()); upperLine.SetLineWidth(1); upperLine.SetLineColor(kBlack); upperLine.SetLineStyle(7);
+	    signal_mid	= (self.mj_signal_max-self.mj_signal_min)/2.
+            lowerLine 	= TLine(self.mj_signal_min,0.,self.mj_signal_min,mplot.GetMaximum()); lowerLine.SetLineWidth(1); lowerLine.SetLineColor(kBlack); lowerLine.SetLineStyle(7);
+            middleLine 	= TLine(signal_mid,0.,signal_mid,mplot.GetMaximum()); middleLine.SetLineWidth(1); middleLine.SetLineColor(kBlack); middleLine.SetLineStyle(7);
+            upperLine 	= TLine(self.mj_signal_max,0.,self.mj_signal_max,mplot.GetMaximum()); upperLine.SetLineWidth(1); upperLine.SetLineColor(kBlack); upperLine.SetLineStyle(7);
             mplot.addObject(lowerLine);
 	    mplot.addObject(middleLine);
             mplot.addObject(upperLine);
@@ -2078,7 +1833,6 @@ objName ==objName_before ):
 	    pt.SetBorderSize(0)
 	    text = pt.AddText("#leftarrow signal region #rightarrow")
 	    text.SetTextFont(62)
-	    mplot.addObject(pt);
 
 	    pt1 = ROOT.TPaveText(0.3555276,0.1183816,0.4535176,0.1908092,"NDC")
 	    pt1.SetTextFont(42)
@@ -2091,7 +1845,6 @@ objName ==objName_before ):
 	    text.SetTextFont(62)
 	    text = pt1.AddText("category")
 	    text.SetTextFont(62)
-	    mplot.addObject(pt1);
 
 	    pt2 = ROOT.TPaveText(0.4723618,0.1183816,0.5678392,0.1908092,"NDC")
 	    pt2.SetTextFont(42)
@@ -2104,7 +1857,11 @@ objName ==objName_before ):
 	    text.SetTextFont(62)
 	    text = pt2.AddText("category")
 	    text.SetTextFont(62)
-	    mplot.addObject(pt2);
+
+	    if not options.closure:
+		    mplot.addObject(pt)
+		    mplot.addObject(pt1)
+		    mplot.addObject(pt2)
 	    	    
             ### legend of the plot
             self.leg = self.legend4Plot(mplot,0,1,0.3,0.,0.,0.,0,0,1);
@@ -2152,18 +1909,6 @@ objName ==objName_before ):
         getattr(self.workspace4fit_,"import")(rrv_number_WJets_in_mj_signal_region_from_fitting);
 	getattr(self.workspace4fit_,"import")(rrv_number_WJets_in_mj_sb_region_from_fitting);
         rrv_number_WJets_in_mj_signal_region_from_fitting.Print();
-
-    ### Define the Extended Pdf for and mlvj fit giving: label, fit model name, list constraint, range to be fitted and do the decorrelation
-    def interpolate_signal_MC(self,in_file_name, label, in_range, mlvj_model, deco=0, show_constant_parameter=0, logy=0, ismc=0):
-
-        print "############### Interpolate mlvj single MC sample ",in_file_name," ",label,"  ",mlvj_model,"  ",in_range," ##################"
-        ## import variable and dataset
-        rrv_mass_lvj = self.workspace4fit_.var("rrv_mass_lvj")
-        constrainslist =[];
-
-        ## make the extended pdf model
-        model = self.make_Model(label+in_range,mlvj_model,"_mlvj",constrainslist,ismc,500,1); #call with option "interpolate"
-#        getattr(self.workspace4fit_,"import")(model) #needed??
 
     ### Define the Extended Pdf for and mlvj fit giving: label, fit model name, list constraint, range to be fitted and do the decorrelation
     def fit_mlvj_model_single_MC(self,in_file_name, label, in_range, mlvj_model, deco=0, show_constant_parameter=0, logy=0, ismc=0):
@@ -2294,9 +2039,6 @@ objName ==objName_before ):
         rfresult = model.fitTo(rdataset_mj,RooFit.Save(1), RooFit.SumW2Error(kTRUE) ,RooFit.Extended(kTRUE), RooFit.Minimizer("Minuit2") );
         #rfresult = model.fitTo(rdataset_mj,RooFit.Save(1), RooFit.SumW2Error(kTRUE) ,RooFit.Extended(kTRUE), RooFit.Minimizer("Minuit2") );
         rfresult.Print();
-	
-	#@#errorTTbar if 'TTbar' in label:
-	#	print self.workspace4fit_.var('rrv_number_TTbar_xww_el_mj').getError();exit(0)
 	
         ## Plot the result
         mplot = rrv_mass_j.frame(RooFit.Title(label+" fitted by "+in_model_name), RooFit.Bins(int(rrv_mass_j.getBins()/self.narrow_factor)) );
@@ -2464,11 +2206,6 @@ objName ==objName_before ):
         self.BinWidth_mlvj=self.BinWidth_mlvj/self.narrow_factor;
         nbins_mlvj=int((rrv_mass_lvj.getMax()-rrv_mass_lvj.getMin())/self.BinWidth_mlvj);
         rrv_mass_lvj.setBins(nbins_mlvj);
-	
-	if TString(label).Contains("_RS1G_WW_") or TString(label).Contains("_BulkG_WW_") or TString(label).Contains("_Wprime_WZ_"):
-	   bw = self.BinWidth_mlvj
-	   nbins_mlvj=int((rrv_mass_lvj.getMax()-rrv_mass_lvj.getMin())/bw);
-	   rrv_mass_lvj.setBins(nbins_mlvj)
 	   
         ##### dataset of m_j -> scaled and not scaled to lumi 
         rdataset_mj     = RooDataSet("rdataset"+label+"_"+self.channel+"_mj","rdataset"+label+"_"+self.channel+"_mj",RooArgSet(rrv_mass_j,rrv_weight),RooFit.WeightVar(rrv_weight) );
@@ -2506,10 +2243,8 @@ objName ==objName_before ):
             treeIn.GetEntry(i);
 	    	
             if i==0:
-		if TString(label).Contains('Bulk'):
-       			tmp_scale_to_lumi = treeIn.lumiweight
 		if TString(label).Contains("_STop") or TString(label).Contains("_WJets") or TString(label).Contains("_TTbar") or TString(label).Contains("_VV"):
-      			tmp_scale_to_lumi = treeIn.totEventWeight2 / (treeIn.puweight*(treeIn.genweight/abs(treeIn.genweight)))
+      			tmp_scale_to_lumi = treeIn.totEventWeight / (treeIn.puweight*(treeIn.genweight/abs(treeIn.genweight)))
 			#tmp_scale_to_lumi = 1
 		if TString(label).Contains('data'):
 			tmp_scale_to_lumi = 1
@@ -2525,21 +2260,13 @@ objName ==objName_before ):
             if self.isGoodEvent == 1:
                 ### weigh MC events                                                        
 		#@#change weight for new trees, lumi is already taken care of in totEventWeight
-		if not 'Bulk' in label:
-                	tmp_event_weight 	= treeIn.totEventWeight2
-		else:
-			tmp_event_weight 	= treeIn.puweight*(treeIn.genweight/abs(treeIn.genweight))*treeIn.lumiweight
+               	tmp_event_weight 	= treeIn.totEventWeight
 		tmp_event_weight4fit 	= tmp_event_weight/tmp_scale_to_lumi
 		#@#	
 
                 if label =="_data" or label =="_data_xww":
                     tmp_event_weight=1.;
                     tmp_event_weight4fit=1.;                    
-                else:
-                    if TString(label).Contains("_TTbar") or TString(label).Contains("_STop") :
-                        tmp_event_weight=tmp_event_weight*self.rrv_wtagger_eff_reweight_forT.getVal();
-                    else:
-                        tmp_event_weight=tmp_event_weight*self.rrv_wtagger_eff_reweight_forV.getVal();
                 
                 rrv_mass_lvj.setVal(treeIn.MWW);
 		#add upper sideband
@@ -2550,7 +2277,19 @@ objName ==objName_before ):
                     data_category.setLabel("sideband");
                     combData.add(RooArgSet(rrv_mass_lvj,data_category),tmp_event_weight);
                     combData4fit.add(RooArgSet(rrv_mass_lvj,data_category),tmp_event_weight4fit);
-		#blind data
+		#blind data if needed
+		if options.closure and 'data' in label:
+			if tmp_jet_mass >= self.mj_signal_min and tmp_jet_mass < self.mj_signal_max:
+		            rdataset_signal_region_mlvj.add( RooArgSet( rrv_mass_lvj ), tmp_event_weight );
+		            rdataset4fit_signal_region_mlvj.add( RooArgSet( rrv_mass_lvj ), tmp_event_weight4fit );
+		            
+		            data_category.setLabel("signal_region");
+		            combData.add(RooArgSet(rrv_mass_lvj,data_category),tmp_event_weight);
+		            combData4fit.add(RooArgSet(rrv_mass_lvj,data_category),tmp_event_weight4fit);
+		            hnum_2region.Fill(1,tmp_event_weight);
+
+		            hnum_2region.Fill(0,tmp_event_weight);
+
 		if 'data' not in label:
 		        if tmp_jet_mass >= self.mj_signal_min and tmp_jet_mass < self.mj_signal_max:
 		            rdataset_signal_region_mlvj.add( RooArgSet( rrv_mass_lvj ), tmp_event_weight );
@@ -2561,8 +2300,7 @@ objName ==objName_before ):
 		            combData4fit.add(RooArgSet(rrv_mass_lvj,data_category),tmp_event_weight4fit);
 		            hnum_2region.Fill(1,tmp_event_weight);
 
-		            if treeIn.MWW >=self.mlvj_signal_min and treeIn.MWW <self.mlvj_signal_max:
-		                hnum_2region.Fill(0,tmp_event_weight);
+		            hnum_2region.Fill(0,tmp_event_weight);
 
                 if tmp_jet_mass >= self.mj_sideband_hi_min and tmp_jet_mass < self.mj_sideband_hi_max:
                     rdataset_sb_hi_mlvj.add( RooArgSet( rrv_mass_lvj ), tmp_event_weight );
@@ -2570,8 +2308,8 @@ objName ==objName_before ):
                     
                 rrv_mass_j.setVal( tmp_jet_mass );
 		#cut out data in signal region
-		if 'data' in label:
-			if tmp_jet_mass <= 65 or tmp_jet_mass >= 105:
+		if 'data' in label and not options.unblind:
+			if tmp_jet_mass < self.mj_sideband_lo_max or tmp_jet_mass >= self.mj_sideband_hi_min:
                     		rdataset_mj.add( RooArgSet( rrv_mass_j ), tmp_event_weight )
                 		rdataset4fit_mj.add( RooArgSet( rrv_mass_j ), tmp_event_weight4fit )
 		else:
@@ -2589,12 +2327,6 @@ objName ==objName_before ):
 
                 hnum_4region.Fill(2,tmp_event_weight);
 
-
-        if not label=="_data" and not label =="_data_xww": ## correct also because events in 4fit dataset were not rescaled in the cycle
-            if TString(label).Contains("_TTbar") or TString(label).Contains("_STop") :
-                tmp_scale_to_lumi=tmp_scale_to_lumi*self.rrv_wtagger_eff_reweight_forT.getVal();
-            else:
-                tmp_scale_to_lumi=tmp_scale_to_lumi*self.rrv_wtagger_eff_reweight_forV.getVal();
 
         ### scale to lumi for MC in 4fit datasets
         rrv_scale_to_lumi=RooRealVar("rrv_scale_to_lumi"+label+"_"+self.channel,"rrv_scale_to_lumi"+label+"_"+self.channel,tmp_scale_to_lumi)
@@ -2709,28 +2441,10 @@ objName ==objName_before ):
         self.fit_mlvj_model_single_MC(self.file_WJets0_mc,"_WJets01_xww","_signal_region",self.MODEL_4_mlvj_alter, 0, 0, 1, 1);       
         print "________________________________________________________________________"
 
-    #### Define the steps to fit signal distribution in the mj and mlvj spectra
-    def fit_Signal(self,model_narrow="DoubleCB_v1",model_width="BWDoubleCB"):
-        print "############# fit_Signal #################"
-        ### Build the dataset
-        self.get_mj_and_mlvj_dataset(self.file_signal,"_%s_xww"%(self.signal_sample), self.jetalgo)# to get the shape of m_lvj
-        self.fit_mlvj_model_single_MC(self.file_signal,"_%s_xww"%(self.signal_sample),"_signal_region",model_narrow, 0, 0, 0, 0);
-        print "________________________________________________________________________"
-
-    #### Interpolate rate and shape for the signal from external files
-    def interpolate_Signal(self,model_narrow="DoubleCB_v1",model_width="BWDoubleCB"):
-        print "############# interpolate_Signal #################"
-        ### Build the dataset
-        self.interpolate_signal_MC(self,"_%s_xww"%(self.signal_sample),"_signal_region",model_narrow, 0, 0, 0, 0);
-        print "________________________________________________________________________"
 
     ##### Fit of all the MC in both mj and mlvj : Signal, TTbar, STop, VV and Wjets
     def fit_AllSamples_Mj_and_Mlvj(self):
         print "################### fit_AllSamples_Mj_and_Mlvj #####################"
-        if (self.interpolate):
-            self.interpolate_Signal()
-        else:    
-            self.fit_Signal()
 #	sys.exit()
         self.fit_WJets()
         self.fit_TTbar()
@@ -2777,30 +2491,10 @@ objName ==objName_before ):
 
         getattr(self.workspace4limit_,"import")(self.workspace4fit_.var("rrv_mass_lvj"));
 
-        ### whole number of events from the considered signal sample, WJets, VV, TTbar, STop -> couting
-        if TString(self.signal_sample).Contains("RS1G_WW"):
-         getattr(self.workspace4limit_,"import")(self.workspace4fit_.var("rrv_number_fitting_signal_region_%s_xww_%s_mlvj"%(self.signal_sample,self.channel)).clone("rate_RSWW_xww_for_counting"))
-        elif TString(self.signal_sample).Contains("BulkG_WW"):
-         getattr(self.workspace4limit_,"import")(self.workspace4fit_.var("rrv_number_fitting_signal_region_%s_xww_%s_mlvj"%(self.signal_sample,self.channel)).clone("rate_BulkWW_xww_for_counting"))
-        elif TString(self.signal_sample).Contains("Wprime_WZ"):
-         getattr(self.workspace4limit_,"import")(self.workspace4fit_.var("rrv_number_fitting_signal_region_%s_xww_%s_mlvj"%(self.signal_sample,self.channel)).clone("rate_WprimeWZ_xww_for_counting"))
-        else:
-         getattr(self.workspace4limit_,"import")(self.workspace4fit_.var("rrv_number_fitting_signal_region_%s_xww_%s_mlvj"%(self.signal_sample,self.channel)).clone("rate_%s_xww_for_counting"%(self.signal_sample)))
-            
         getattr(self.workspace4limit_,"import")(self.workspace4fit_.var("rrv_number_fitting_signal_region_WJets0_xww_%s_mlvj"%(self.channel)).clone("rate_WJets_xww_for_counting"))
         getattr(self.workspace4limit_,"import")(self.workspace4fit_.var("rrv_number_fitting_signal_region_VV_xww_%s_mlvj"%(self.channel)).clone("rate_VV_xww_for_counting"))
         getattr(self.workspace4limit_,"import")(self.workspace4fit_.var("rrv_number_fitting_signal_region_TTbar_xww_%s_mlvj"%(self.channel)).clone("rate_TTbar_xww_for_counting"))
         getattr(self.workspace4limit_,"import")(self.workspace4fit_.var("rrv_number_fitting_signal_region_STop_xww_%s_mlvj"%(self.channel)).clone("rate_STop_xww_for_counting"))
-
-        ### number of signal, Wjets, VV, TTbar and STop --> unbin
-        if TString(self.signal_sample).Contains("RS1G_WW"):
-         getattr(self.workspace4limit_,"import")(self.workspace4fit_.var("rrv_number_%s_xww_signal_region_%s_mlvj"%(self.signal_sample, self.channel)).clone("rate_RSWW_xww_for_unbin"));
-        elif TString(self.signal_sample).Contains("BulkG_WW"):
-         getattr(self.workspace4limit_,"import")(self.workspace4fit_.var("rrv_number_%s_xww_signal_region_%s_mlvj"%(self.signal_sample, self.channel)).clone("rate_BulkWW_xww_for_unbin"));
-        elif TString(self.signal_sample).Contains("Wprime_WZ"):
-         getattr(self.workspace4limit_,"import")(self.workspace4fit_.var("rrv_number_%s_xww_signal_region_%s_mlvj"%(self.signal_sample, self.channel)).clone("rate_WprimeWZ_xww_for_unbin"));
-        else:
-         getattr(self.workspace4limit_,"import")(self.workspace4fit_.var("rrv_number_%s_xww_signal_region_%s_mlvj"%(self.signal_sample, self.channel)).clone("rate_%s_xww_for_unbin"%(self.signal_sample)));
             
         getattr(self.workspace4limit_,"import")(self.workspace4fit_.var("rrv_number_WJets0_xww_signal_region_%s_mlvj"%(self.channel)).clone("rate_WJets_xww_for_unbin"));
         getattr(self.workspace4limit_,"import")(self.workspace4fit_.var("rrv_number_VV_xww_signal_region_%s_mlvj"%(self.channel)).clone("rate_VV_xww_for_unbin"));
@@ -2808,9 +2502,9 @@ objName ==objName_before ):
         getattr(self.workspace4limit_,"import")(self.workspace4fit_.var("rrv_number_STop_xww_signal_region_%s_mlvj"%(self.channel)).clone("rate_STop_xww_for_unbin"));
 	
         ### Set the error properly -> taking into account lumi, Vtagger and theoretical uncertainty on XS -> for VV, TTbar and STop
-        self.workspace4limit_.var("rate_VV_xww_for_unbin").setError(self.workspace4limit_.var("rate_VV_xww_for_unbin").getVal()*TMath.Sqrt( self.lumi_uncertainty*self.lumi_uncertainty + self.rrv_wtagger_eff_reweight_forV.getError()/self.rrv_wtagger_eff_reweight_forV.getVal()*self.rrv_wtagger_eff_reweight_forV.getError()/self.rrv_wtagger_eff_reweight_forV.getVal() +self.XS_VV_NLO_uncertainty*self.XS_VV_NLO_uncertainty ) );
-        self.workspace4limit_.var("rate_STop_xww_for_unbin").setError(self.workspace4limit_.var("rate_STop_xww_for_unbin").getVal()*TMath.Sqrt( self.lumi_uncertainty*self.lumi_uncertainty + self.rrv_wtagger_eff_reweight_forT.getError()/self.rrv_wtagger_eff_reweight_forT.getVal()*self.rrv_wtagger_eff_reweight_forT.getError()/self.rrv_wtagger_eff_reweight_forT.getVal() +self.XS_STop_NLO_uncertainty*self.XS_STop_NLO_uncertainty ) );
-        self.workspace4limit_.var("rate_TTbar_xww_for_unbin").setError(self.workspace4limit_.var("rate_TTbar_xww_for_unbin").getVal()*TMath.Sqrt( self.lumi_uncertainty*self.lumi_uncertainty + self.rrv_wtagger_eff_reweight_forT.getError()/self.rrv_wtagger_eff_reweight_forT.getVal()*self.rrv_wtagger_eff_reweight_forT.getError()/self.rrv_wtagger_eff_reweight_forT.getVal() ))
+        self.workspace4limit_.var("rate_VV_xww_for_unbin").setError(self.workspace4limit_.var("rate_VV_xww_for_unbin").getVal()*TMath.Sqrt( self.lumi_uncertainty*self.lumi_uncertainty +self.XS_VV_NLO_uncertainty*self.XS_VV_NLO_uncertainty ) );
+        self.workspace4limit_.var("rate_STop_xww_for_unbin").setError(self.workspace4limit_.var("rate_STop_xww_for_unbin").getVal()*TMath.Sqrt( self.lumi_uncertainty*self.lumi_uncertainty +self.XS_STop_NLO_uncertainty*self.XS_STop_NLO_uncertainty ) );
+        self.workspace4limit_.var("rate_TTbar_xww_for_unbin").setError(self.workspace4limit_.var("rate_TTbar_xww_for_unbin").getVal()*TMath.Sqrt( self.lumi_uncertainty*self.lumi_uncertainty ))
 
         ### Get the dataset for data into the signal region
         getattr(self.workspace4limit_,"import")(self.workspace4fit_.data("rdataset_data_xww_signal_region_%s_mlvj"%(self.channel)).Clone("data_obs_xww_%s_%s"%(self.channel,self.wtagger_label)))
@@ -2833,15 +2527,6 @@ objName ==objName_before ):
         else:
          getattr(self.workspace4limit_,"import")(self.workspace4fit_.pdf("model_pdf_VV_xww_signal_region_%s_mlvj"%(self.channel)).clone("VV_xww_%s_%s"%(self.channel,self.wtagger_label)))
 
-        if TString(self.signal_sample).Contains("RS1G_WW"):
-         getattr(self.workspace4limit_,"import")(self.workspace4fit_.pdf("model_pdf_%s_xww_signal_region_%s_mlvj"%(self.signal_sample,self.channel)).clone("RSWW_xww_%s_%s"%(self.channel, self.wtagger_label)))
-        elif TString(self.signal_sample).Contains("BulkG_WW"):
-         getattr(self.workspace4limit_,"import")(self.workspace4fit_.pdf("model_pdf_%s_xww_signal_region_%s_mlvj"%(self.signal_sample,self.channel)).clone("BulkWW_xww_%s_%s"%(self.channel, self.wtagger_label)))
-        elif TString(self.signal_sample).Contains("Wprime_WZ"):
-         getattr(self.workspace4limit_,"import")(self.workspace4fit_.pdf("model_pdf_%s_xww_signal_region_%s_mlvj"%(self.signal_sample,self.channel)).clone("WprimeWZ_xww_%s_%s"%(self.channel, self.wtagger_label)))
-        else:    
-         getattr(self.workspace4limit_,"import")(self.workspace4fit_.pdf("model_pdf_%s_xww_signal_region_%s_mlvj"%(self.signal_sample,self.channel)).clone(self.signal_sample+"_xww_%s_%s"%(self.channel, self.wtagger_label)))
-
         ### Fix all the Pdf parameters 
         rrv_x = self.workspace4limit_.var("rrv_mass_lvj");
 
@@ -2850,15 +2535,6 @@ objName ==objName_before ):
         self.fix_Pdf(self.workspace4limit_.pdf("VV_xww_%s_%s"%(self.channel,self.wtagger_label)), RooArgSet(rrv_x));
         self.fix_Pdf(self.workspace4limit_.pdf("WJets_xww_%s_%s"%(self.channel,self.wtagger_label)), RooArgSet(rrv_x));
         
-        if TString(self.signal_sample).Contains("RS1G_WW"):            
-         self.fix_Pdf(self.workspace4limit_.pdf("RSWW_xww_%s_%s"%(self.channel, self.wtagger_label)), RooArgSet(rrv_x));
-        elif TString(self.signal_sample).Contains("BulkG_WW"):            
-         self.fix_Pdf(self.workspace4limit_.pdf("BulkWW_xww_%s_%s"%(self.channel, self.wtagger_label)), RooArgSet(rrv_x));
-        elif TString(self.signal_sample).Contains("Wprime_WZ"):            
-         self.fix_Pdf(self.workspace4limit_.pdf("WprimeWZ_xww_%s_%s"%(self.channel, self.wtagger_label)), RooArgSet(rrv_x));
-        else:    
-         self.fix_Pdf(self.workspace4limit_.pdf(self.signal_sample+"_xww_%s_%s"%(self.channel, self.wtagger_label)), RooArgSet(rrv_x));
-
         print " ############## Workspace for limit ";
         parameters_workspace = self.workspace4limit_.allVars();
         par = parameters_workspace.createIterator();
@@ -2935,40 +2611,6 @@ objName ==objName_before ):
                   self.workspace4limit_.var("Deco_STop_xww_signal_region_%s_%s_mlvj_13TeV_eig0"%(self.channel, self.wtagger_label)).setError(self.shape_para_error_STop);
                   params_list.append(self.workspace4limit_.var("Deco_STop_xww_signal_region_%s_%s_mlvj_13TeV_eig0"%(self.channel, self.wtagger_label)));
                                        
-                
-        #### add signal shape parameters' uncertainty -> increase the uncertainty on the mean and the sigma since we are using a CB or a Double CB or a BWxDB or BWxCB
-        if self.workspace4limit_.var("rrv_mean_CB_%s_xww_signal_region_%s_%s"%(self.signal_sample, self.channel, self.wtagger_label)):
-
-           self.workspace4limit_.var( "rrv_mean_shift_scale_lep_%s_xww_signal_region_%s_%s"%(self.signal_sample, self.channel, self.wtagger_label)).setError(self.mean_signal_uncertainty_lep_scale);
-           self.workspace4limit_.var( "rrv_mean_shift_scale_jes_%s_xww_signal_region_%s_%s"%(self.signal_sample, self.channel, self.wtagger_label)).setError(self.mean_signal_uncertainty_jet_scale);
-           self.workspace4limit_.var( "rrv_sigma_shift_lep_scale_%s_xww_signal_region_%s_%s"%(self.signal_sample, self.channel, self.wtagger_label)).setError(self.sigma_signal_uncertainty_lep_scale);
-           self.workspace4limit_.var( "rrv_sigma_shift_jes_%s_xww_signal_region_%s_%s"%(self.signal_sample, self.channel, self.wtagger_label)).setError(self.sigma_signal_uncertainty_jet_scale);
-           self.workspace4limit_.var( "rrv_sigma_shift_res_%s_xww_signal_region_%s_%s"%(self.signal_sample, self.channel, self.wtagger_label)).setError(self.sigma_signal_uncertainty_jet_res);
-
-           if self.channel == "mu":
-            self.workspace4limit_.var("CMS_sig_p1_scale_m_13TeV").setError(1);
-            self.workspace4limit_.var("CMS_sig_p2_scale_m_13TeV").setError(1);
-            params_list.append(self.workspace4limit_.var("CMS_sig_p1_scale_m_13TeV"));
-            params_list.append(self.workspace4limit_.var("CMS_sig_p2_scale_m_13TeV"));
-           elif self.channel == "el":
-            self.workspace4limit_.var("CMS_sig_p1_scale_e_13TeV").setError(1);
-            self.workspace4limit_.var("CMS_sig_p2_scale_e_13TeV").setError(1);
-            params_list.append(self.workspace4limit_.var("CMS_sig_p1_scale_e_13TeV"));
-            params_list.append(self.workspace4limit_.var("CMS_sig_p2_scale_e_13TeV"));
-           elif self.channel == "em":
-            self.workspace4limit_.var("CMS_sig_p1_scale_em_13TeV").setError(1);
-            self.workspace4limit_.var("CMS_sig_p2_scale_em_13TeV").setError(1);
-            params_list.append(self.workspace4limit_.var("CMS_sig_p1_scale_em_13TeV"));
-            params_list.append(self.workspace4limit_.var("CMS_sig_p2_scale_em_13TeV"));
-               
-           self.workspace4limit_.var("CMS_sig_p1_jes_13TeV").setError(1);
-           self.workspace4limit_.var("CMS_sig_p2_jes_13TeV").setError(1);
-           self.workspace4limit_.var("CMS_sig_p2_jer_13TeV").setError(1);
-
-           params_list.append(self.workspace4limit_.var("CMS_sig_p1_jes_13TeV"));
-           params_list.append(self.workspace4limit_.var("CMS_sig_p2_jes_13TeV"));
-           params_list.append(self.workspace4limit_.var("CMS_sig_p2_jer_13TeV"));
-
         
         ### calculate the shape uncertainty for cut-and-counting
         self.rrv_counting_uncertainty_from_shape_uncertainty = RooRealVar("rrv_counting_uncertainty_from_shape_uncertainty_%s"%(self.channel),"rrv_counting_uncertainty_from_shape_uncertainty_%s"%(self.channel),0);
@@ -3018,23 +2660,6 @@ objName ==objName_before ):
                   self.FloatingParams.add(self.workspace4limit_.var("Deco_STop_xww_signal_region_%s_%s_mlvj_13TeV_eig0"%(self.channel,self.wtagger_label)));
                     
 
-          if self.workspace4limit_.var("rrv_mean_CB_%s_xww_signal_region_%s_%s"%(self.signal_sample, self.channel, self.wtagger_label)):
-
-             if self.channel == "mu":
-              self.FloatingParams.add(self.workspace4limit_.var("CMS_sig_p1_scale_m_13TeV"));
-              self.FloatingParams.add(self.workspace4limit_.var("CMS_sig_p2_scale_m_13TeV"));
-             elif self.channel == "el":
-              self.FloatingParams.add(self.workspace4limit_.var("CMS_sig_p1_scale_e_13TeV"));
-              self.FloatingParams.add(self.workspace4limit_.var("CMS_sig_p2_scale_e_13TeV"));
-             elif self.channel == "em":
-              self.FloatingParams.add(self.workspace4limit_.var("CMS_sig_p1_scale_em_13TeV"));
-              self.FloatingParams.add(self.workspace4limit_.var("CMS_sig_p2_scale_em_13TeV"));
-                 
-
-             self.FloatingParams.add(self.workspace4limit_.var("CMS_sig_p1_jes_13TeV"));
-             self.FloatingParams.add(self.workspace4limit_.var("CMS_sig_p2_jes_13TeV"));
-             self.FloatingParams.add(self.workspace4limit_.var("CMS_sig_p2_jer_13TeV"));
-
         ### Add the floating list to the combiner --> the pdf which are not fixed are floating by default
         getattr(self.workspace4limit_,"import")(self.FloatingParams);
 
@@ -3058,14 +2683,6 @@ objName ==objName_before ):
 
         if mode == "unbin":
             fnOnly = ntpath.basename(self.file_rlt_root) ## workspace for limit --> output file for the workspace
-            if TString(self.signal_sample).Contains("RS1G_WW"):
-             datacard_out.write("\nshapes RSWW_xww  CMS_xww_%s1J%s  %s %s:$PROCESS_%s_%s"%(self.channel,self.wtagger_label,fnOnly,self.workspace4limit_.GetName(), self.channel, self.wtagger_label));
-            elif TString(self.signal_sample).Contains("BulkG_WW"):
-             datacard_out.write("\nshapes BulkWW_xww  CMS_xww_%s1J%s  %s %s:$PROCESS_%s_%s"%(self.channel,self.wtagger_label,fnOnly,self.workspace4limit_.GetName(), self.channel, self.wtagger_label));
-            elif TString(self.signal_sample).Contains("Wprime_WZ"):
-             datacard_out.write("\nshapes WprimeWZ_xww  CMS_xww_%s1J%s  %s %s:$PROCESS_%s_%s"%(self.channel,self.wtagger_label,fnOnly,self.workspace4limit_.GetName(), self.channel, self.wtagger_label));
-            else:
-             datacard_out.write("\nshapes %s_xww  CMS_xww_%s1J%s  %s %s:$PROCESS_%s_%s"%(self.signal_sample,self.channel,self.wtagger_label,fnOnly,self.workspace4limit_.GetName(), self.channel, self.wtagger_label));
                 
             datacard_out.write("\nshapes WJets_xww  CMS_xww_%s1J%s  %s %s:$PROCESS_%s_%s"%(self.channel,self.wtagger_label,fnOnly,self.workspace4limit_.GetName(), self.channel, self.wtagger_label));
             datacard_out.write("\nshapes TTbar_xww  CMS_xww_%s1J%s  %s %s:$PROCESS_%s_%s"%(self.channel,self.wtagger_label,fnOnly,self.workspace4limit_.GetName(), self.channel, self.wtagger_label));
@@ -3084,52 +2701,19 @@ objName ==objName_before ):
 
         datacard_out.write( "\nbin CMS_xww_%s1J%s CMS_xww_%s1J%s CMS_xww_%s1J%s CMS_xww_%s1J%s CMS_xww_%s1J%s"%(self.channel,self.wtagger_label,self.channel,self.wtagger_label,self.channel,self.wtagger_label,self.channel,self.wtagger_label,self.channel,self.wtagger_label));
 
-        if TString(self.signal_sample).Contains("RS1G_WW"):
-         datacard_out.write( "\nprocess RSWW_xww WJets_xww TTbar_xww STop_xww VV_xww"); ## just one signal sample
-        elif TString(self.signal_sample).Contains("BulkG_WW"):
-         datacard_out.write( "\nprocess BulkWW_xww WJets_xww TTbar_xww STop_xww VV_xww"); ## just one signal sample
-        elif TString(self.signal_sample).Contains("Wprime_WZ"):
-         datacard_out.write( "\nprocess WprimeWZ_xww WJets_xww TTbar_xww STop_xww VV_xww"); ## just one signal sample
-        else:
-         datacard_out.write( "\nprocess %s_xww WJets_xww TTbar_xww STop_xww VV_xww "%(self.signal_sample)); ## just one signal sample
-
         datacard_out.write( "\nprocess -1 1 2 3 4" );
 
         ### rates for the different process
         if mode == "unbin":
-            if TString(self.signal_sample).Contains("RS1G_WW"):                    
-             datacard_out.write( "\nrate %0.5f %0.3f %0.3f %0.3f %0.3f "%(self.workspace4limit_.var("rate_RSWW_xww_for_unbin").getVal()*self.xs_rescale, self.workspace4limit_.var("rate_WJets_xww_for_unbin").getVal(), self.workspace4limit_.var("rate_TTbar_xww_for_unbin").getVal(), self.workspace4limit_.var("rate_STop_xww_for_unbin").getVal(), self.workspace4limit_.var("rate_VV_xww_for_unbin").getVal() ) )
-            elif TString(self.signal_sample).Contains("BulkG_WW"):                    
-             datacard_out.write( "\nrate %0.5f %0.3f %0.3f %0.3f %0.3f "%(self.workspace4limit_.var("rate_BulkWW_xww_for_unbin").getVal()*self.xs_rescale, self.workspace4limit_.var("rate_WJets_xww_for_unbin").getVal(), self.workspace4limit_.var("rate_TTbar_xww_for_unbin").getVal(), self.workspace4limit_.var("rate_STop_xww_for_unbin").getVal(), self.workspace4limit_.var("rate_VV_xww_for_unbin").getVal() ) )
-            elif TString(self.signal_sample).Contains("Wprime_WZ"):                    
-             datacard_out.write( "\nrate %0.5f %0.3f %0.3f %0.3f %0.3f "%(self.workspace4limit_.var("rate_WprimeWZ_xww_for_unbin").getVal()*self.xs_rescale, self.workspace4limit_.var("rate_WJets_xww_for_unbin").getVal(), self.workspace4limit_.var("rate_TTbar_xww_for_unbin").getVal(), self.workspace4limit_.var("rate_STop_xww_for_unbin").getVal(), self.workspace4limit_.var("rate_VV_xww_for_unbin").getVal() ) )
-            else:
-             datacard_out.write( "\nrate %0.5f %0.3f %0.3f %0.3f %0.3f "%(self.workspace4limit_.var("rate_%s_xww_for_unbin"%(self.signal_sample)).getVal()*self.xs_rescale, self.workspace4limit_.var("rate_WJets_xww_for_unbin").getVal(), self.workspace4limit_.var("rate_TTbar_xww_for_unbin").getVal(), self.workspace4limit_.var("rate_STop_xww_for_unbin").getVal(), self.workspace4limit_.var("rate_VV_xww_for_unbin").getVal() ) )
+             datacard_out.write( "\nrate %0.3f %0.3f %0.3f %0.3f "%(self.workspace4limit_.var("rate_WJets_xww_for_unbin").getVal(), self.workspace4limit_.var("rate_TTbar_xww_for_unbin").getVal(), self.workspace4limit_.var("rate_STop_xww_for_unbin").getVal(), self.workspace4limit_.var("rate_VV_xww_for_unbin").getVal() ) )
                 
         if mode == "counting":
-            if TString(self.signal_sample).Contains("RS1G_WW"):                    
-             datacard_out.write( "\nrate %0.5f %0.3f %0.3f %0.3f %0.3f"%(self.workspace4limit_.var("rate_RSWW_xww_for_counting").getVal()*self.xs_rescale, self.workspace4limit_.var("rate_WJets_xww_for_counting").getVal(), self.workspace4limit_.var("rate_TTbar_xww_for_counting").getVal(), self.workspace4limit_.var("rate_STop_xww_for_counting").getVal(), self.workspace4limit_.var("rate_VV_xww_for_counting").getVal() ) )
-            elif TString(self.signal_sample).Contains("BulkG_WW"):                    
-             datacard_out.write( "\nrate %0.5f %0.3f %0.3f %0.3f %0.3f"%(self.workspace4limit_.var("rate_BulkWW_xww_for_counting").getVal()*self.xs_rescale, self.workspace4limit_.var("rate_WJets_xww_for_counting").getVal(), self.workspace4limit_.var("rate_TTbar_xww_for_counting").getVal(), self.workspace4limit_.var("rate_STop_xww_for_counting").getVal(), self.workspace4limit_.var("rate_VV_xww_for_counting").getVal() ) )
-            elif TString(self.signal_sample).Contains("Wprime_WZ"):                    
-             datacard_out.write( "\nrate %0.5f %0.3f %0.3f %0.3f %0.3f"%(self.workspace4limit_.var("rate_WprimeWZ_xww_for_counting").getVal()*self.xs_rescale, self.workspace4limit_.var("rate_WJets_xww_for_counting").getVal(), self.workspace4limit_.var("rate_TTbar_xww_for_counting").getVal(), self.workspace4limit_.var("rate_STop_xww_for_counting").getVal(), self.workspace4limit_.var("rate_VV_xww_for_counting").getVal() ) )
-            else : 
-             datacard_out.write( "\nrate %0.5f %0.3f %0.3f %0.3f %0.3f"%(self.workspace4limit_.var("rate_%s_xww_for_counting"%(self.signal_sample)).getVal()*self.xs_rescale, self.workspace4limit_.var("rate_WJets_xww_for_counting").getVal(), self.workspace4limit_.var("rate_TTbar_xww_for_counting").getVal(), self.workspace4limit_.var("rate_STop_xww_for_counting").getVal(), self.workspace4limit_.var("rate_VV_xww_for_counting").getVal() ) )
+             datacard_out.write( "\nrate %0.3f %0.3f %0.3f %0.3f"%(self.workspace4limit_.var("rate_WJets_xww_for_counting").getVal(), self.workspace4limit_.var("rate_TTbar_xww_for_counting").getVal(), self.workspace4limit_.var("rate_STop_xww_for_counting").getVal(), self.workspace4limit_.var("rate_VV_xww_for_counting").getVal() ) )
 
         datacard_out.write( "\n-------------------------------- " )
 
         ### luminosity nouisance
         datacard_out.write( "\nlumi_13TeV lnN %0.3f - %0.3f %0.3f %0.3f"%(1.+self.lumi_uncertainty, 1.+self.lumi_uncertainty,1.+self.lumi_uncertainty,1.+self.lumi_uncertainty) )
-
-        ### signal PDF XS uncertainties
-        if TString(self.signal_sample).Contains("RS1G_WW"):                    
-            datacard_out.write( "\nCMS_xww_XS_RS1G_WW_13TeV lnN %0.3f - - - -"%(1+self.signal_xsec_NNLO_uncertainty));
-        elif TString(self.signal_sample).Contains("BulkG_WW"):                    
-            datacard_out.write( "\nCMS_xww_XS_BulkG_WW_13TeV lnN %0.3f - - - -"%(1+self.signal_xsec_NNLO_uncertainty));
-        elif TString(self.signal_sample).Contains("Wprime_WZ"):                    
-            datacard_out.write( "\nCMS_xww_XS_Wprime_WZ_13TeV lnN %0.3f - - - -"%(1+self.signal_xsec_NNLO_uncertainty));
-        else : 
-            datacard_out.write( "\nCMS_xww_XS_sig_13TeV lnN %0.3f - - - -"%(1+self.signal_xsec_NNLO_uncertainty));
 
         ### STop XS  nouisance in boosted regime
         datacard_out.write( "\nCMS_xww_XS_STop_13TeV lnN - - - %0.3f -"%(1+self.XS_STop_NLO_uncertainty) )
@@ -3142,15 +2726,6 @@ objName ==objName_before ):
             datacard_out.write( "\nCMS_xww_WJ_norm_13TeV gmN %0.3f %0.3f - - -"%(self.number_WJets_insideband, getattr(self, "datadriven_alpha_WJets_xww_%s"%(mode)) ) )
         else:
             datacard_out.write( "\nCMS_xww_WJ_norm_%s_%s_13TeV lnN - %0.3f - - -"%(self.channel, self.wtagger_label, 1+ self.workspace4limit_.var("rate_WJets_xww_for_unbin").getError()/self.workspace4limit_.var("rate_WJets_xww_for_unbin").getVal() ) );
-
-        ### Top normalization due to SF in the ttbar CR
-        datacard_out.write( "\nCMS_xww_Top_norm_%s_%s_13TeV lnN - - %0.3f %0.3f -"%(self.channel, self.wtagger_label, 1+self.rrv_wtagger_eff_reweight_forT.getError()/self.rrv_wtagger_eff_reweight_forT.getVal(), 1+self.rrv_wtagger_eff_reweight_forT.getError()/self.rrv_wtagger_eff_reweight_forT.getVal() ) );
-
-        ### V-Tagger SF nouisance
-        datacard_out.write( "\nCMS_eff_vtag_tau21_sf_13TeV lnN %0.3f/%0.3f - - - %0.3f/%0.3f"%(1+self.rrv_wtagger_eff_reweight_forV.getError(),1-self.rrv_wtagger_eff_reweight_forV.getError(), 1+self.rrv_wtagger_eff_reweight_forV.getError(),1-self.rrv_wtagger_eff_reweight_forV.getError()));
-            
-        ### btag scale factor on the MC background
-#        datacard_out.write( "\nCMS_xww_btagger lnN - - %0.3f %0.3f %0.3f"%(self.channel, 1+self.btag_scale_uncertainty, 1+self.btag_scale_uncertainty, 1+self.btag_scale_uncertainty ) );
 
         ### btag scale factor on the MC background
         datacard_out.write( "\n#CMS_eff_vtag_model_13TeV lnN %0.3f - - - %0.3f"%(1+self.eff_vtag_model,1+self.eff_vtag_model) );
@@ -3179,32 +2754,6 @@ objName ==objName_before ):
 
         ### Lepton SF
         datacard_out.write( "\nCMS_eff_%s_13TeV lnN %0.3f - %0.3f %0.3f %0.3f"%(self.channel_short, 1+self.lep_eff_uncertainty, 1+self.lep_eff_uncertainty,1+self.lep_eff_uncertainty,1+self.lep_eff_uncertainty ) );
-
-        ############ Evaluated just for signal, in principle also on all the backgrounds with the same topology
-
-        ### Lepton Energy scale
-        datacard_out.write( "\nCMS_scale_%s_13TeV lnN %0.3f - - - -"%(self.channel_short,1+self.signal_lepton_energy_scale_uncertainty));
-
-        ### Lepton Energy Resolution
-        datacard_out.write( "\nCMS_res_%s_13TeV lnN %0.3f - - - -"%(self.channel_short,1+self.signal_lepton_energy_res_uncertainty));
-
-        ### CA8 jet energy scale
-        #datacard_out.write( "\nCMS_scale_j_13TeV lnN %0.3f - - - -"%(1+self.signal_jet_energy_scale_uncertainty));
-        datacard_out.write( "\nCMS_scale_j_13TeV lnN %0.3f/%0.3f - - - -"%(1+self.signal_jet_energy_scale_uncertainty_up,1+self.signal_jet_energy_scale_uncertainty_down));
-
-        ### jet mass scale
-        datacard_out.write( "\nCMS_mass_scale_j_13TeV lnN %0.3f/%0.3f - - - -"%(1+self.signal_jet_mass_scale_uncertainty_up,1+self.signal_jet_mass_scale_uncertainty_down));
-
-        ### jet mass resolution
-        datacard_out.write( "\nCMS_mass_res_j_13TeV lnN %0.3f/%0.3f - - - -"%(1+self.signal_jet_mass_res_uncertainty_up,1+self.signal_jet_mass_res_uncertainty_down));
-
-        ### CA8 jet energy resolution
-        datacard_out.write( "\nCMS_res_j_13TeV lnN %0.3f - - - -"%(1+self.signal_jet_energy_res_uncertainty));
-
-
-        ### btag on the signal
-        datacard_out.write( "\nCMS_xww_btag_eff_13TeV lnN %0.3f - - - -"%(1+self.signal_btag_uncertainty));
-
 
         ### print shapes parameter to be taken int account
         if mode == "unbin":
@@ -3259,42 +2808,22 @@ objName ==objName_before ):
 
         rrv_x = workspace.var("rrv_mass_lvj")
         data_obs = workspace.data("data_obs_xww_%s_%s"%(self.channel,self.wtagger_label));
-        if TString(self.signal_sample).Contains("RS1G_WW"):
-         model_pdf_signal = workspace.pdf("RSWW_xww_%s_%s"%(self.channel,self.wtagger_label));
-        elif TString(self.signal_sample).Contains("BulkG_WW"):
-         model_pdf_signal = workspace.pdf("BulkWW_xww_%s_%s"%(self.channel,self.wtagger_label));
-        elif TString(self.signal_sample).Contains("Wprime_WZ"):
-         model_pdf_signal = workspace.pdf("WprimeWZ_xww_%s_%s"%(self.channel,self.wtagger_label));
-        else:
-         model_pdf_signal = workspace.pdf("%s_xww_%s_%s"%(self.signal_sample,self.channel,self.wtagger_label));
             
         model_pdf_WJets  = workspace.pdf("WJets_xww_%s_%s"%(self.channel,self.wtagger_label));
         model_pdf_VV     = workspace.pdf("VV_xww_%s_%s"%(self.channel,self.wtagger_label));
         model_pdf_TTbar  = workspace.pdf("TTbar_xww_%s_%s"%(self.channel,self.wtagger_label));
         model_pdf_STop   = workspace.pdf("STop_xww_%s_%s"%(self.channel,self.wtagger_label));
 	
-        model_pdf_signal.Print();
         model_pdf_WJets.Print();
         model_pdf_VV.Print();
         model_pdf_TTbar.Print();
         model_pdf_STop.Print();
 	
-        if TString(self.signal_sample).Contains("RS1G_WW"):
-         rrv_number_signal = workspace.var("rate_RSWW_xww_for_unbin");
-        elif TString(self.signal_sample).Contains("BulkG_WW"):
-         rrv_number_signal = workspace.var("rate_BulkWW_xww_for_unbin");
-        elif TString(self.signal_sample).Contains("Wprime_WZ"):
-         rrv_number_signal = workspace.var("rate_WprimeWZ_xww_for_unbin");
-        else:
-         rrv_number_signal = workspace.var("rate_%s_xww_for_unbin"%(self.signal_sample));
-            
-         
         rrv_number_WJets  = workspace.var("rate_WJets_xww_for_unbin");
         rrv_number_VV     = workspace.var("rate_VV_xww_for_unbin");
         rrv_number_TTbar  = workspace.var("rate_TTbar_xww_for_unbin");
         rrv_number_STop   = workspace.var("rate_STop_xww_for_unbin");
 
-        rrv_number_signal.Print();
         rrv_number_WJets.Print();
         rrv_number_VV.Print();
         rrv_number_TTbar.Print();
@@ -3318,12 +2847,10 @@ objName ==objName_before ):
         model_Total_background_MC = RooAddPdf("model_Total_background_MC_xww","model_Total_background_MC_xww",RooArgList(model_pdf_WJets,model_pdf_VV,model_pdf_TTbar,model_pdf_STop),RooArgList(rrv_number_WJets,rrv_number_VV,rrv_number_TTbar,rrv_number_STop));
 
         if data_obs.sumEntries() != 0:
-         scale_number_signal = rrv_number_signal.getVal()/data_obs.sumEntries()
          #### scale factor in order to scale MC to data in the final plot -> in order to avoid the normalization to data which is done by default in rooFit
          scale_number_Total_background_MC = rrv_number_Total_background_MC.getVal()/data_obs.sumEntries()
         else:
 	 scale_number_Total_background_MC = rrv_number_Total_background_MC.getVal()   
-	 scale_number_signal = rrv_number_signal.getVal()  
            
         #### create the frame
         mplot = rrv_x.frame(RooFit.Title("check_workspace"), RooFit.Bins(int(rrv_x.getBins()/self.narrow_factor)));
@@ -3346,19 +2873,10 @@ objName ==objName_before ):
 
         model_Total_background_MC.plotOn(mplot,RooFit.Normalization(scale_number_Total_background_MC),RooFit.Name("STop_line_invisible"), RooFit.Components("STop_xww_%s_%s"%(self.channel,self.wtagger_label)), RooFit.LineColor(kBlack), RooFit.LineWidth(1), RooFit.VLines());
 
-        ### signal scale to be visible in the plots
-        label_tstring = TString(self.signal_sample);
-        if options.sample.find('Wprime') != -1 and label_tstring.Contains("2000"):
-            signal_scale=0.058998*0.472301;
-        elif options.sample.find('BulkG') != -1 and label_tstring.Contains("2000"):
-            signal_scale=0.000239518814875*100;
-        else:
-            signal_scale=20*self.xs_rescale;
-
-        #model_pdf_signal.plotOn(mplot,RooFit.Normalization(scale_number_signal*signal_scale),RooFit.Name("%s #times %s"%(self.signal_sample, signal_scale)),RooFit.DrawOption("L"), RooFit.LineColor(self.color_palet["Signal"]), RooFit.LineStyle(2), RooFit.VLines());
 
         #### plot the observed data using poissonian error bar
-        #self.getData_PoissonInterval(data_obs,mplot);
+	if options.unblind:
+		self.getData_PoissonInterval(data_obs,mplot);
         
         model_Total_background_MC.plotOn(mplot,RooFit.Normalization(scale_number_Total_background_MC),RooFit.Invisible());
 
@@ -3397,60 +2915,54 @@ objName ==objName_before ):
         datahist = data_obs.binnedClone( data_obs.GetName()+"_binnedClone",data_obs.GetName()+"_binnedClone" )
 	
         parameters_list = RooArgList();
-	mplot.remove("BulkWW_xww_%s_%s"%(self.channel,self.wtagger_label))
-	mplot.remove("data_invisible")
-	mplot.remove("data_obs")
-	mplot.remove("data_obs_xww_%s_%s"%(self.channel,self.wtagger_label))
+	if not options.unblind and not options.closure:
+		mplot.remove("data_invisible")
+		mplot.remove("data_obs")
+		mplot.remove("data_obs_xww_%s_%s"%(self.channel,self.wtagger_label))
 
         self.draw_canvas_with_pull( rrv_x,datahist,mplot, mplot_pull,ndof,parameters_list,"%s/m_lvj_fitting/"%(self.plotsDir),"check_workspace_for_limit","",0,1);
 	#self.draw_canvas_with_pull( rrv_x,datahist,mplot, mplot_pull,ndof,parameters_list,"%s/ExtraPlots/"%(self.plotsDir),"check_workspace_for_limit","",0,1);
 	if self.channel == 'el':
 		mplot.GetYaxis().SetRangeUser(1e-3,2e5)
 	mplot.GetXaxis().SetTitle('M_{WW} (GeV)')
-	self.draw_canvas(mplot,"%s/ExtraPlots/"%(self.plotsDir),"check_workspace_for_limit",0,logy,0);
+	mplot.GetYaxis().SetRangeUser(2e-3,1e5)
+	self.draw_canvas(mplot,"%s/ExtraPlots/"%(self.plotsDir),"check_workspace_for_limit",0,logy,0,0,1);
 	mplot.Print()
 
 	
         
 
 ### funtion to run the complete alpha analysis
-def pre_limit_sb_correction(method, channel, signal_sample="BulkG_c0p2_M1000", jetalgo="Mjsoftdrop",in_mlvj_signal_region_min=500, in_mlvj_signal_region_max=700,
-                            in_mj_min=30, in_mj_max=140, in_mlvj_min=400, in_mlvj_max=1400, fit_model="ErfExp_v1", fit_model_alter="ErfPow_v1",interpolate=False): 
+def pre_limit_sb_correction(method, channel, jetalgo="Mjsoftdrop", in_mj_min=30, in_mj_max=140, in_mlvj_min=400, in_mlvj_max=1400, fit_model="ErfExp_v1", fit_model_alter="ErfPow_v1"): 
 
-    print "#################### pre_limit_sb_correction: channel %s, signal %s, max and min signal region %f-%f, max and min mJ %f-%f, max and min mlvj %f-%f, fit model %s and alternate %s ######################"%(channel,signal_sample,in_mlvj_signal_region_min,in_mlvj_signal_region_max,in_mj_min,in_mj_max,in_mlvj_min,in_mlvj_max,fit_model,fit_model_alter);
+    print "#################### pre_limit_sb_correction: channel %s, max and min mJ %f-%f, max and min mlvj %f-%f, fit model %s and alternate %s ######################"%(channel,in_mj_min,in_mj_max,in_mlvj_min,in_mlvj_max,fit_model,fit_model_alter);
     
-    boostedW_fitter=doFit_wj_and_wlvj(channel, signal_sample, jetalgo,in_mlvj_signal_region_min,in_mlvj_signal_region_max,in_mj_min,in_mj_max,in_mlvj_min,in_mlvj_max,fit_model,fit_model_alter,interpolate);
+    boostedW_fitter=doFit_wj_and_wlvj(channel, jetalgo,in_mj_min,in_mj_max,in_mlvj_min,in_mlvj_max,fit_model,fit_model_alter);
     getattr(boostedW_fitter,"analysis_sideband_correction_%s"%(method) )();
                                                 
 ### funtion to run the analysis without systematics
-def pre_limit_sb_correction_without_systematic( channel, signal_sample, in_mlvj_signal_region_min=500, in_mlvj_signal_region_max=700,
-                                                 in_mj_min=30, in_mj_max=140, in_mlvj_min=400, in_mlvj_max=1400, fit_model="ErfExp_v1", fit_model_alter="ErfPow_v1",interpolate=False):
+def pre_limit_sb_correction_without_systematic( channel, in_mj_min=30, in_mj_max=140, in_mlvj_min=400, in_mlvj_max=1400, fit_model="ErfExp_v1", fit_model_alter="ErfPow_v1"):
 
-    print "#################### pre_limit_sb_correction_without_systermatic: channel %s, signal %s, max and min signal region %f-%f, max and min mJ %f-%f, max and min mlvj %f-%f, fit model %s and alternate %s ######################"%(channel,signal_sample,in_mlvj_signal_region_min,in_mlvj_signal_region_max,in_mj_min,in_mj_max,in_mlvj_min,in_mlvj_max,fit_model,fit_model_alter);
-    boostedW_fitter=doFit_wj_and_wlvj(channel,signal_sample,in_mlvj_signal_region_min, in_mlvj_signal_region_max,in_mj_min,in_mj_max,in_mlvj_min,in_mlvj_max,fit_model,fit_model_alter,interpolate);
+    print "#################### pre_limit_sb_correction_without_systermatic: channel %s, max and min mJ %f-%f, max and min mlvj %f-%f, fit model %s and alternate %s ######################"%(channel,in_mj_min,in_mj_max,in_mlvj_min,in_mlvj_max,fit_model,fit_model_alter);
+    boostedW_fitter=doFit_wj_and_wlvj(channel,in_mj_min,in_mj_max,in_mlvj_min,in_mlvj_max,fit_model,fit_model_alter);
     boostedW_fitter.analysis_sideband_correction_method1_without_shape_and_psmodel_systematic()
 
 
-def pre_limit_simple(channel,sample,lomass,himass):
+def pre_limit_simple(channel):
     print "######################### pre_limit_simple for %s sampel"%(channel)
-    pre_limit_sb_correction_without_systematic(channel,sample,lomass,himass,40,130,700,5000,"ExpN","ExpTail")
+    pre_limit_sb_correction_without_systematic(channel,40,130,700,5000,"ExpN","ExpTail")
 
 #### Main Code
 if __name__ == '__main__':
 
     channel=options.channel;
-    mass=options.mass;
-    sample = options.sample+"_M"+str(int(mass))
-    
-    lomass = mass - mass*15./100.;
-    himass = mass + mass*15./100.; 
             
     if options.simple:
         print '################# simple mode for %s sample'%(channel)
-        pre_limit_simple(channel,sample,lomass,himass);
+        pre_limit_simple(channel);
     else:
         if options.category.find('HP2') != -1 or options.category.find('ALLP2') != -1:	
-           pre_limit_sb_correction("method1",channel,sample,options.jetalgo,lomass,himass,40,150,700,5000,"Exp","ExpN",options.interpolate) 
+           pre_limit_sb_correction("method1",channel,options.jetalgo,40,150,700,5000,"Exp","ExpN") 
 	else:
-           pre_limit_sb_correction("method1",channel,sample,options.jetalgo,lomass,himass,40,150,900,5000,"ExpN","ExpTail",options.interpolate) 
+           pre_limit_sb_correction("method1",channel,options.jetalgo,40,150,900,5000,"ExpN","ExpTail") 
 	
