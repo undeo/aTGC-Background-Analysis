@@ -1746,6 +1746,7 @@ objName ==objName_before ):
 	self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setConstant(kTRUE)
         getattr(self.workspace4fit_,"import")(model_data);
 	allfitresultsmjsignal.append(rfresult)
+	allfitresults.append(rfresult)
         rfresult.Print();
 
 	print 'realtive error of ttbar-normalization: ' + str(self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).getError() / self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).getVal())
@@ -3019,14 +3020,14 @@ if __name__ == '__main__':
            pre_limit_sb_correction("method1",channel,options.jetalgo,40,150,900,5000,"ExpN","ExpTail")
 
     table=''
-    for res in allfitresultsmj:
+    for res in allfitresults:
 	pars = res.floatParsFinal()
 	print "-------------------------------"
 	for i in range(pars.getSize()):
-		print pars[i].GetName() + ' : ' + str(pars[i].getVal()) + ' \pm ' + str(pars[i].getError())
+		print pars[i].GetName() + ' : % 0.2E'%pars[i].getVal() + ' \pm % 0.2E'%pars[i].getError()
     print "______"
-    for res in allfitresultsmjsignal:
-	    res.Print()
-	    print "-----------------------------"
+    #for res in allfitresults:
+	#    res.Print()
+	#    print "-----------------------------"
 
     	
