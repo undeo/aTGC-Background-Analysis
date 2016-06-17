@@ -31,6 +31,7 @@ parser.add_option('--jetalgo', action="store",type="string",dest="jetalgo",defau
 parser.add_option('--unblind', action="store_true",dest="unblind",default=False)
 parser.add_option('--closure',action="store_true",dest="closure",default=False)
 
+
 (options, args) = parser.parse_args()
 
 ROOT.gSystem.Load(options.inPath+"/PDFs/PdfDiagonalizer_cc.so")
@@ -42,6 +43,7 @@ from ROOT import draw_error_band, draw_error_band_extendPdf, draw_error_band_Dec
 allfitresults = []
 allfitresultsmj = []
 allfitresultsmjsignal = []
+prefityields = {}
 
 class doFit_wj_and_wlvj:
 
@@ -128,6 +130,8 @@ class doFit_wj_and_wlvj:
 		self.mj_sideband_hi_min	= 125
 		self.mj_signal_min	= 105
 		self.mj_signal_max	= 125
+
+
 
         ## zone definition in the jet mass 
         rrv_mass_j.setRange("sb_lo",self.mj_sideband_lo_min,self.mj_sideband_lo_max);
@@ -1305,7 +1309,7 @@ objName ==objName_before ):
             rrv_c_sb    = self.workspace4fit_.var("rrv_c_Pow%s_sb_lo_%s"%(label,self.channel));
             rrv_delta_c = RooRealVar("rrv_delta_c_Pow%s_%s"%(label,self.channel),"rrv_delta_c_Pow%s_%s"%(label,self.channel),0., -100*rrv_c_sb.getError(),100*rrv_c_sb.getError());
             correct_factor_pdf = RooPowPdf("correct_factor_pdf","correct_factor_pdf",rrv_x,rrv_delta_c);
-
+		
         if mlvj_model=="ExpN":
             rrv_c_sb  = self.workspace4fit_.var("rrv_c_ExpN%s_sb_lo_%s"%(label,self.channel));
             rrv_n_sb  = self.workspace4fit_.var("rrv_n_ExpN%s_sb_lo_%s"%(label,self.channel));
@@ -1444,6 +1448,7 @@ objName ==objName_before ):
         rfresult=simPdf.fitTo(combData4fit,RooFit.Save(kTRUE), RooFit.SumW2Error(kTRUE));
         rfresult=simPdf.fitTo(combData4fit,RooFit.Save(kTRUE), RooFit.SumW2Error(kTRUE), RooFit.Minimizer("Minuit2"));
         rfresult.Print();
+	allfitresults.append(rfresult)
         rfresult.covarianceMatrix().Print();
 
         ### Decorrelate the parameters in the alpha shape
@@ -1740,11 +1745,13 @@ objName ==objName_before ):
 		self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setError(self.workspace4fit_.var('ttbar_error').getVal())
 		self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setRange(0,1e4)
 	#@#
+
 	self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setConstant(kFALSE)
         rfresult = model_data4fit.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo,sb_hi") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2) );
         rfresult = model_data4fit.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo,sb_hi") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2), RooFit.Minimizer("Minuit2") );
 	self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setConstant(kTRUE)
-        getattr(self.workspace4fit_,"import")(model_data);
+        getattr(self.workspace4fit_,"import")(model_data)
+	getattr(self.workspace4fit_,'import')(rfresult)
 	allfitresultsmjsignal.append(rfresult)
 	allfitresults.append(rfresult)
         rfresult.Print();
@@ -1771,7 +1778,7 @@ objName ==objName_before ):
         getattr(self.workspace4fit_,"import")(rrv_number_data_mj);
         
         ## if fit on Wjets default with the default shape
-        if TString(label).Contains("_WJets0_"):
+        if TString(label).Contains("_WJets0"):
 
             ## make the final plot
             mplot = rrv_mass_j.frame(RooFit.Title(""), RooFit.Bins(int(rrv_mass_j.getBins()/self.narrow_factor)));
@@ -1814,13 +1821,13 @@ objName ==objName_before ):
 		    model_data.plotOn( mplot,RooFit.Name("_invisible"), RooFit.Components("model%s_%s_mj,model_STop_xww_%s_mj,model_TTbar_xww_%s_mj,model_VV_xww_%s_mj"%(label,self.channel,self.channel,self.channel,self.channel)),RooFit.LineColor(kBlack), RooFit.LineWidth(1) ,RooFit.NormRange("sb_lo,sb_hi"), RooFit.VLines(),RooFit.Range(125,150));
 	    else:
 		    ## plot "dashed" style area
-		    model_data.plotOn(mplot,RooFit.Name("VV_invisible"), RooFit.Components("model%s_%s_mj,model_STop_xww_%s_mj,model_TTbar_xww_%s_mj,model_VV_xww_%s_mj"%(label,self.channel,self.channel,self.channel,self.channel)),RooFit.DrawOption("F"), RooFit.FillColor(self.color_palet["VV"]+1), RooFit.LineColor(kBlack),RooFit.FillStyle(1001),RooFit.Range(65,105),RooFit.NormRange("sb_lo,sb_hi"),RooFit.VLines());
+		    model_data.plotOn(mplot,RooFit.Name("VV_invisible"), RooFit.Components("model%s_%s_mj,model_STop_xww_%s_mj,model_TTbar_xww_%s_mj,model_VV_xww_%s_mj"%(label,self.channel,self.channel,self.channel,self.channel)),RooFit.DrawOption("F"), RooFit.FillColor(self.color_palet["VV"]+2), RooFit.LineColor(kBlack),RooFit.FillStyle(1001),RooFit.Range(65,105),RooFit.NormRange("sb_lo,sb_hi"),RooFit.VLines());
 
-		    model_data.plotOn(mplot,RooFit.Name("TTbar_invisible"), RooFit.Components("model%s_%s_mj,model_STop_xww_%s_mj,model_TTbar_xww_%s_mj"%(label,self.channel,self.channel,self.channel)),RooFit.DrawOption("F"), RooFit.FillColor(self.color_palet["TTbar"]+1), RooFit.LineColor(kBlack),RooFit.FillStyle(1001),RooFit.Range(65,105),RooFit.NormRange("sb_lo,sb_hi"),RooFit.VLines());
+		    model_data.plotOn(mplot,RooFit.Name("TTbar_invisible"), RooFit.Components("model%s_%s_mj,model_STop_xww_%s_mj,model_TTbar_xww_%s_mj"%(label,self.channel,self.channel,self.channel)),RooFit.DrawOption("F"), RooFit.FillColor(self.color_palet["TTbar"]+2), RooFit.LineColor(kBlack),RooFit.FillStyle(1001),RooFit.Range(65,105),RooFit.NormRange("sb_lo,sb_hi"),RooFit.VLines());
 
-		    model_data.plotOn(mplot,RooFit.Name("STop_invisible"), RooFit.Components("model%s_%s_mj,model_STop_xww_%s_mj"%(label,self.channel,self.channel)),RooFit.DrawOption("F"), RooFit.FillColor(self.color_palet["STop"]+1), RooFit.LineColor(kBlack),RooFit.FillStyle(1001),RooFit.Range(65,105),RooFit.NormRange("sb_lo,sb_hi"),RooFit.VLines());
+		    model_data.plotOn(mplot,RooFit.Name("STop_invisible"), RooFit.Components("model%s_%s_mj,model_STop_xww_%s_mj"%(label,self.channel,self.channel)),RooFit.DrawOption("F"), RooFit.FillColor(self.color_palet["STop"]+2), RooFit.LineColor(kBlack),RooFit.FillStyle(1001),RooFit.Range(65,105),RooFit.NormRange("sb_lo,sb_hi"),RooFit.VLines());
 
-		    model_data.plotOn(mplot,RooFit.Name("WJets_invisible"), RooFit.Components("model%s_%s_mj"%(label,self.channel)),RooFit.DrawOption("F"), RooFit.FillColor(self.color_palet["WJets"]+1),RooFit.FillStyle(1001),RooFit.Range(65,105), RooFit.LineColor(kBlack),RooFit.NormRange("sb_lo,sb_hi"),RooFit.VLines());
+		    model_data.plotOn(mplot,RooFit.Name("WJets_invisible"), RooFit.Components("model%s_%s_mj"%(label,self.channel)),RooFit.DrawOption("F"), RooFit.FillColor(self.color_palet["WJets"]+2),RooFit.FillStyle(1001),RooFit.Range(65,105), RooFit.LineColor(kBlack),RooFit.NormRange("sb_lo,sb_hi"),RooFit.VLines());
 	    
 		    ### solid line
 		    model_data.plotOn( mplot,RooFit.Name("_invisible"), RooFit.Components("model%s_%s_mj"%(label,self.channel)), RooFit.LineColor(kBlack), RooFit.LineWidth(1) ,RooFit.NormRange("sb_lo,sb_hi"), RooFit.VLines(),RooFit.Range(40,65));
@@ -1872,30 +1879,30 @@ objName ==objName_before ):
 	    pt.SetTextFont(42)
 	    pt.SetTextSize(0.04995005)
 	    #pt.SetTextAlign(12)
-	    pt.SetFillColor(0)
+	    pt.SetFillColor(self.color_palet["WJets"])
 	    pt.SetBorderSize(0)
 	    text = pt.AddText("#leftarrow signal region #rightarrow")
 	    text.SetTextFont(62)
 
-	    pt1 = ROOT.TPaveText(0.3555276,0.1183816,0.4535176,0.1908092,"NDC")
+	    pt1 = ROOT.TPaveText(0.3592965,0.1183816,0.4535176,0.1908092,"NDC")
 	    pt1.SetTextFont(42)
 	    pt1.SetTextSize(0.037)
 	    #pt.SetTextAlign(12)
-	    pt1.SetFillColor(0)
-	    pt1.SetFillStyle(0)
+	    pt1.SetFillColor(self.color_palet["WJets"])
+	    #pt1.SetFillStyle(0)
 	    pt1.SetBorderSize(0)
 	    text = pt1.AddText("WW")
 	    text.SetTextFont(62)
 	    text = pt1.AddText("category")
 	    text.SetTextFont(62)
 
-	    pt2 = ROOT.TPaveText(0.4723618,0.1183816,0.5678392,0.1908092,"NDC")
+	    pt2 = ROOT.TPaveText(0.4723618,0.1183816,0.5728643,0.1908092,"NDC")
 	    pt2.SetTextFont(42)
 	    pt2.SetTextSize(0.037)
 	    #pt.SetTextAlign(12)
-	    pt2.SetFillColor(0)
+	    pt2.SetFillColor(self.color_palet["WJets"])
 	    pt2.SetBorderSize(0)
-	    pt2.SetFillStyle(0)
+	    #pt2.SetFillStyle(0)
 	    text = pt2.AddText("WZ")
 	    text.SetTextFont(62)
 	    text = pt2.AddText("category")
@@ -2085,7 +2092,8 @@ objName ==objName_before ):
         rfresult.Print();
 	allfitresults.append(rfresult)
 	allfitresultsmj.append(rfresult)
-	#raw_input(label)
+	getattr(self.workspace4fit_,'import')(rfresult)
+	raw_input(label)
 	
         ## Plot the result
         mplot = rrv_mass_j.frame(RooFit.Title(label+" fitted by "+in_model_name), RooFit.Bins(int(rrv_mass_j.getBins()/self.narrow_factor)) );
@@ -2203,11 +2211,17 @@ objName ==objName_before ):
 	    self.draw_canvas_with_pull( rrv_mass_j,datahist,mplot, mplot_pull,ndof,parameters_list,"%s/ExtraPlots/"%(self.plotsDir), label+in_file_name, in_model_name)
 
 	self.workspace4fit_.var("rrv_number"+label+"_"+self.channel+"_mj").Print();
+
+
+
 	self.workspace4fit_.var("rrv_scale_to_lumi"+label+"_"+self.channel).Print();
         #normalize the number of total events to lumi --> correct the number to scale to the lumi
         self.workspace4fit_.var("rrv_number"+label+"_"+self.channel+"_mj").setVal( self.workspace4fit_.var("rrv_number"+label+"_"+self.channel+"_mj").getVal()*self.workspace4fit_.var("rrv_scale_to_lumi"+label+"_"+self.channel).getVal() )
         self.workspace4fit_.var("rrv_number"+label+"_"+self.channel+"_mj").setError(self.workspace4fit_.var("rrv_number"+label+"_"+self.channel+"_mj").getError()*self.workspace4fit_.var("rrv_scale_to_lumi"+label+"_"+self.channel).getVal() )
         self.workspace4fit_.var("rrv_number"+label+"_"+self.channel+"_mj").Print();
+
+	prefityields["rrv_number"+label+"_"+self.channel+"_mj_prefit"] = self.workspace4fit_.var("rrv_number"+label+"_"+self.channel+"_mj").getVal()
+	prefityields["rrv_number"+label+"_"+self.channel+"_mj_prefit_error"] = self.workspace4fit_.var("rrv_number"+label+"_"+self.channel+"_mj").getError()
 
 	
         ##### apply the correction of the mean and sigma from the ttbar control sample to the STop, TTbar and VV 
@@ -2826,6 +2840,9 @@ objName ==objName_before ):
     def save_workspace_to_file(self):
         self.workspace4limit_.writeToFile(self.file_rlt_root);
         self.file_out.close()
+	#FileOutTmp = TFile.Open("cards_%s_%s/mj_workspace.root"%(self.channel,self.wtagger_label),"recreate")
+	#self.workspace4fit_.writeToFile("TMPTMP/cards_%s_%s/mj_workspace.root"%(self.channel,self.wtagger_label));
+	#FileOutTmp.Close()
 
     #### Read the final workspace and produce the latest plots 
     def read_workspace(self, logy=0):
@@ -2913,6 +2930,7 @@ objName ==objName_before ):
 	model_Total_background_MC.plotOn(mplot,RooFit.Normalization(scale_number_Total_background_MC),RooFit.Name("TTbar"), RooFit.Components("VV_xww_%s_%s,TTbar_xww_%s_%s,STop_xww_%s_%s"%(self.channel,self.wtagger_label,self.channel,self.wtagger_label,self.channel,self.wtagger_label)),RooFit.DrawOption("F"), RooFit.FillColor(self.color_palet["TTbar"]), RooFit.LineColor(kBlack), RooFit.VLines());
         model_Total_background_MC.plotOn(mplot,RooFit.Normalization(scale_number_Total_background_MC),RooFit.Name("VV"), RooFit.Components("VV_xww_%s_%s,STop_xww_%s_%s"%(self.channel,self.wtagger_label,self.channel,self.wtagger_label)),RooFit.DrawOption("F"), RooFit.FillColor(self.color_palet["VV"]), RooFit.LineColor(kBlack), RooFit.VLines());
 
+
 	model_Total_background_MC.plotOn(mplot,RooFit.Normalization(scale_number_Total_background_MC),RooFit.Name("STop"), RooFit.Components("STop_xww_%s_%s"%(self.channel,self.wtagger_label)),RooFit.DrawOption("F"), RooFit.FillColor(self.color_palet["STop"]), RooFit.LineColor(kBlack), RooFit.VLines());
 
         #solid line
@@ -2981,7 +2999,7 @@ objName ==objName_before ):
 	self.draw_canvas(mplot,"%s/ExtraPlots/"%(self.plotsDir),"check_workspace_for_limit",0,logy,0,0,1);
 	mplot.Print()
 
-	
+		
         
 
 ### funtion to run the complete alpha analysis
@@ -3024,10 +3042,13 @@ if __name__ == '__main__':
 	pars = res.floatParsFinal()
 	print "-------------------------------"
 	for i in range(pars.getSize()):
-		print pars[i].GetName() + ' : % 0.2E'%pars[i].getVal() + ' \pm % 0.2E'%pars[i].getError()
+		print pars[i].GetName() + ' : % 0.4E'%pars[i].getVal() + ' \pm % 0.4E'%pars[i].getError()
     print "______"
     #for res in allfitresults:
 	#    res.Print()
 	#    print "-----------------------------"
-
+    for res in allfitresults:
+	    if "WJets0_" in res.GetName():
+		    res.Print()
+    print prefityields
     	
