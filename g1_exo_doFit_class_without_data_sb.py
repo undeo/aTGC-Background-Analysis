@@ -2896,10 +2896,9 @@ objName ==objName_before ):
     def save_workspace_to_file(self):
         self.workspace4limit_.writeToFile(self.file_rlt_root);
         self.file_out.close()
-	if options.savews:
-		FileOutTmp = TFile.Open("cards_%s_%s/mj_workspace_postfit.root"%(self.channel,self.wtagger_label),"recreate")
-		self.workspace4fit_.Write();
-		FileOutTmp.Close()
+	FileOutTmp = TFile.Open("cards_%s_%s/mj_workspace_postfit.root"%(self.channel,self.wtagger_label),"recreate")
+	self.workspace4fit_.Write();
+	FileOutTmp.Close()
 
     #### Read the final workspace and produce the latest plots 
     def read_workspace(self, logy=0):
