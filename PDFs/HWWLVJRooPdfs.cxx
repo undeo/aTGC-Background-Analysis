@@ -1,3 +1,4 @@
+
 /***************************************************************************** 
  * Project: RooFit                                                           * 
  *                                                                           * 
@@ -12,6 +13,7 @@
 #include "RooExponential.h" 
 #include <math.h> 
 #include "TMath.h" 
+#include "sf_hyperg.h" 
 
 #include <algorithm>
 #include <vector>
@@ -51,8 +53,35 @@
 #include "TGraphAsymmErrors.h"
 #include <iostream>
 using namespace std;
+using namespace Mathelp;
 
 void HWWLVJRooPdfs(){}
+
+//// Erf*Exp function implementation for W+Jets
+Double_t ErfExpDeco(Double_t x, Double_t c, Double_t offset, Double_t width){
+    if(width<1e-2)width=1e-2;
+    if (c==0)c=-1e-7;
+    return TMath::Exp(-(x-offset)/(width+c))*(1.+TMath::Erf((x-offset)/(width-c)))/2. ;
+}
+
+Double_t ErfExpDeco(Double_t x, Double_t x_min, Double_t x_max, Double_t c, Double_t offset, Double_t width){
+    if(width<1e-2)width=1e-2;
+    if (c==0)c=1e-7;
+    double minTerm = (TMath::Exp(c*c*width*width/4+c*offset) * 
+		      TMath::Erf((2*x_min-c*width*width-
+				  2*offset)/2/width) - 
+		      TMath::Exp(c*x_min) * 
+		      TMath::Erf((x_min-offset)/width) - 
+		      TMath::Exp(c*x_min))/-2/c;
+    double maxTerm = (TMath::Exp(c*c*width*width/4+c*offset) * 
+		      TMath::Erf((2*x_max-c*width*width-
+				  2*offset)/2/width) - 
+		      TMath::Exp(c*x_max) * 
+		      TMath::Erf((x_max-offset)/width) - 
+		      TMath::Exp(c*x_max))/-2/c;
+    Double_t integral=(maxTerm-minTerm) ;
+    return TMath::Exp(c*x)*(1.+TMath::Erf((x-offset)/width))/2./integral ;
+}
 
 //// Erf*Exp function implementation 
 Double_t ErfExp(Double_t x, Double_t c, Double_t offset, Double_t width){
@@ -79,6 +108,7 @@ Double_t ErfExp(Double_t x, Double_t x_min, Double_t x_max, Double_t c, Double_t
 	Double_t integral=(maxTerm-minTerm) ;
 	return TMath::Exp(c*x)*(1.+TMath::Erf((x-offset)/width))/2./integral ;
 }
+
 
 //// Single Exp function 
 Double_t Exp(Double_t x, Double_t c){
@@ -180,6 +210,78 @@ Double_t  AtanPow3(Double_t x,Double_t c0,Double_t c1, Double_t c2, Double_t off
 
 
 //// Erf*Exp pdf 
+ClassImp(RooErfExpDecoPdf) 
+
+RooErfExpDecoPdf::RooErfExpDecoPdf(const char *name, const char *title, 
+					RooAbsReal& _x,
+					RooAbsReal& _c,
+					RooAbsReal& _offset,
+					RooAbsReal& _width) :
+    			                RooAbsPdf(name,title), 
+ 			                x("x","x",this,_x),
+			                c("c","c",this,_c),
+			                offset("offset","offset",this,_offset),
+			                width("width","width",this,_width){ } 
+
+
+RooErfExpDecoPdf::RooErfExpDecoPdf(const RooErfExpDecoPdf& other, const char* name) :  
+	RooAbsPdf(other,name), 
+	x("x",this,other.x),
+	c("c",this,other.c),
+	offset("offset",this,other.offset),
+	width("width",this,other.width){}
+
+
+
+Double_t RooErfExpDecoPdf::evaluate() const { 
+
+    Double_t width_tmp=width; if(width<1e-2){ width_tmp=1e-2;}
+    return ErfExpDeco(x,c,offset,width_tmp) ; 
+} 
+
+Int_t RooErfExpDecoPdf::getAnalyticalIntegral(RooArgSet& allVars, RooArgSet& analVars, const char* /*rangeName*/) const  { 
+	if (matchArgs(allVars,analVars,x)) return 1 ; 
+	return 0 ; 
+} 
+
+Double_t RooErfExpDecoPdf::analyticalIntegral(Int_t code, const char* rangeName) const  { 
+
+  
+  if (code==1) { 
+    Double_t minTerm=0;
+    Double_t maxTerm=0;
+    
+    double exps = width+c;
+    double erfs = width-c;
+
+    minTerm = 0.5*exps * (
+			  TMath::Exp(erfs*erfs/(exps*exps)/4.) *
+			  TMath::Erf((2.*exps*(x.min(rangeName)-offset)/erfs + erfs )/2./exps) -
+			  
+			  TMath::Exp((offset-x.min(rangeName))/exps)*
+			  TMath::Erf((x.min(rangeName)-offset)/erfs) -
+			  
+			  TMath::Exp((offset-x.min(rangeName))/exps)
+			  
+			   );
+    
+    maxTerm = 0.5*exps * (
+			  TMath::Exp(erfs*erfs/(exps*exps)/4.) *
+			  TMath::Erf((2.*exps*(x.max(rangeName)-offset)/erfs + erfs )/2./exps) -
+			  
+			  TMath::Exp((offset-x.max(rangeName))/exps)*
+			  TMath::Erf((x.max(rangeName)-offset)/erfs) -
+			  
+			  TMath::Exp((offset-x.max(rangeName))/exps)
+			  
+			  );
+    
+    return (maxTerm-minTerm) ;
+  } 
+  return 0 ; 
+} 
+
+//// Erf*Exp pdf 
 ClassImp(RooErfExpPdf) 
 
 RooErfExpPdf::RooErfExpPdf(const char *name, const char *title, 
@@ -254,6 +356,7 @@ Double_t RooErfExpPdf::analyticalIntegral(Int_t code, const char* rangeName) con
 	} 
 	return 0 ; 
 } 
+
 
 /// RooAlpha pdf as ratio of two Erf*Exp
 
@@ -748,6 +851,48 @@ Double_t RooUser1Pdf::evaluate() const {
    return TMath::Power(1-x/sqrt_s ,p0)/TMath::Power(x/sqrt_s, p1)  ; 
 } 
 
+
+Int_t RooUser1Pdf::getAnalyticalIntegral(RooArgSet& allVars, RooArgSet& analVars, const char* /*rangeName*/) const  { 
+	if (matchArgs(allVars,analVars,x)) return 1 ; 
+	return 0 ; 
+} 
+
+Double_t RooUser1Pdf::analyticalIntegral(Int_t code, const char* rangeName) const  { 
+  Double_t sqrt_s=500.;
+  if (code==1) {
+    Double_t minTerm=0;
+    Double_t maxTerm=0;
+    //std::cout << -p0 << " " << 1.-p1 << " " << 2.-p1 <<" " << x.max(rangeName)/sqrt_s << " " << x.min(rangeName)/sqrt_s <<std::endl;
+    //std::cout << mgsl_sf_hyperg_2F1(-p0,1.-p1,2.-p1,x.max(rangeName)/sqrt_s) << " " << mgsl_sf_hyperg_2F1(-p0,1.-p1,2.-p1,x.min(rangeName)/sqrt_s) <<std::endl;
+    //std::cout <<p1 + 2.0 <<std::endl;
+    if(fabs(p1 + 2.0) > 1.e-7 ){
+      maxTerm = -TMath::Power(sqrt_s,p1) * TMath::Power(x.max(rangeName),1.-p1) / (p1-1.) *
+	mgsl_sf_hyperg_2F1(-p0,1.-p1,2.-p1,x.max(rangeName)/sqrt_s);
+      
+      minTerm = -TMath::Power(sqrt_s,p1) * TMath::Power(x.min(rangeName),1.-p1) / (p1-1.) *
+	mgsl_sf_hyperg_2F1(-p0,1.-p1,2.-p1,x.min(rangeName)/sqrt_s);
+    }
+    else{
+      maxTerm = sqrt_s * sqrt_s * TMath::Power(1. - x.max(rangeName)/sqrt_s,p0) *
+	TMath::Power(1. - sqrt_s/x.max(rangeName),-p0) *
+	mgsl_sf_hyperg_2F1(1.-p0,-p0,2.-p0,x.min(rangeName)/sqrt_s);
+
+      minTerm = sqrt_s * sqrt_s * TMath::Power(1. - x.min(rangeName)/sqrt_s,p0) *
+	TMath::Power(1. - sqrt_s/x.min(rangeName),-p0) *
+	mgsl_sf_hyperg_2F1(1.-p0,-p0,2.-p0,x.min(rangeName)/sqrt_s);
+	
+
+    }
+    //std::cout << sqrt_s <<" "<< p1 << std::endl;
+    //std::cout << -TMath::Power(sqrt_s,p1) << " " <<  TMath::Power(x.max(rangeName),1.-p1) << std::endl;
+    //std::cout << -TMath::Power(sqrt_s,p1) * TMath::Power(x.max(rangeName),1.-p1) / (p1-1.) *
+    //  mgsl_sf_hyperg_2F1(-p0,1.-p1,2.-p1,x.max(rangeName)/sqrt_s) <<std::endl;
+      //std::cout << maxTerm << " " << minTerm << std::endl;
+    
+    return (maxTerm-minTerm) ;
+  } 
+  return 0 ; 
+}
 
 
 ///////////////////////////////////////////////RooExpNPdf.cxx
@@ -1428,4 +1573,5 @@ Double_t RooAlpha4AtanPowPdf::evaluate() const {
    Double_t widtha_tmp=widtha; if(widtha<1e-2){ widtha_tmp=1e-2;}
    return AtanPow(x,c,offset,width_tmp)/AtanPow(x,ca,offseta,widtha_tmp);
 } 
+
 

@@ -26,19 +26,23 @@ parser.add_option('-c', '--channel',action="store",type="string",dest="channel",
 parser.add_option('-s','--simple', action='store', dest='simple', default=False, help='pre-limit in simple mode')
 parser.add_option('-b', action='store_true', dest='noX', default=True, help='no X11 windows')
 parser.add_option('--inPath', action="store",type="string",dest="inPath",default="./")
-parser.add_option('--category', action="store",type="string",dest="category",default="")
+parser.add_option('--category', '--cat', action="store",type="string",dest="category",default="")
 parser.add_option('--jetalgo', action="store",type="string",dest="jetalgo",default="Mjpruned")
 parser.add_option('--unblind', action="store_true",dest="unblind",default=False)
 parser.add_option('--closure',action="store_true",dest="closure",default=False)
+parser.add_option('--savews',action="store_true",dest="savews",default=False)
+parser.add_option('--hi', action='store', dest='mlvj_hi', type='float', default=5000)
+parser.add_option('--lo', action='store', dest='mlvj_lo', type='float', default=900)
 
 
 (options, args) = parser.parse_args()
 
 ROOT.gSystem.Load(options.inPath+"/PDFs/PdfDiagonalizer_cc.so")
 ROOT.gSystem.Load(options.inPath+"/PDFs/Util_cxx.so")
+ROOT.gSystem.Load(options.inPath+"/PDFs/hyperg_2F1_c.so")
 ROOT.gSystem.Load(options.inPath+"/PDFs/HWWLVJRooPdfs_cxx.so")
 
-from ROOT import draw_error_band, draw_error_band_extendPdf, draw_error_band_Decor, draw_error_band_shape_Decor, Calc_error_extendPdf, Calc_error, RooErfExpPdf, RooAlpha, RooAlpha4ErfPowPdf, RooAlpha4ErfPow2Pdf, RooAlpha4ErfPowExpPdf, PdfDiagonalizer, RooPowPdf, RooPow2Pdf, RooErfPowExpPdf, RooErfPowPdf, RooErfPow2Pdf, RooQCDPdf, RooUser1Pdf, RooBWRunPdf, RooAnaExpNPdf, RooExpNPdf, RooAlpha4ExpNPdf, RooExpTailPdf, RooAlpha4ExpTailPdf, Roo2ExpPdf, RooAlpha42ExpPdf
+from ROOT import draw_error_band, draw_error_band_extendPdf, draw_error_band_Decor, draw_error_band_shape_Decor, Calc_error_extendPdf, Calc_error, RooErfExpPdf, RooAlpha, RooAlpha4ErfPowPdf, RooAlpha4ErfPow2Pdf, RooAlpha4ErfPowExpPdf, PdfDiagonalizer, RooPowPdf, RooPow2Pdf, RooErfPowExpPdf, RooErfPowPdf, RooErfPow2Pdf, RooQCDPdf, RooUser1Pdf, RooBWRunPdf, RooAnaExpNPdf, RooExpNPdf, RooAlpha4ExpNPdf, RooExpTailPdf, RooAlpha4ExpTailPdf, Roo2ExpPdf, RooAlpha42ExpPdf, RooErfExpDecoPdf
 
 allfitresults = []
 allfitresultsmj = []
@@ -523,6 +527,8 @@ objName ==objName_before ):
             cMassFit.SaveAs(rlt_file.Data());
             rlt_file.ReplaceAll(".pdf",".png");
             cMassFit.SaveAs(rlt_file.Data());
+	
+	cMassFit.Delete()
 
     #### draw canvas with plots with pull
     def draw_canvas_with_pull(self, rrv_x, datahist, mplot, mplot_pull,ndof,parameters_list,in_directory, in_file_name, in_model_name="", show_constant_parameter=0, logy=0,ismj=0, fix_axis=0):# mplot + pull
@@ -923,13 +929,15 @@ objName ==objName_before ):
             rrv_c_Exp = RooRealVar("rrv_c_Exp"+label+"_"+self.channel,"rrv_c_Exp"+label+"_"+self.channel,-0.05,-0.1,0.);
             model_pdf = ROOT.RooExponential("model_pdf"+label+"_"+self.channel+mass_spectrum,"model_pdf"+label+"_"+self.channel+mass_spectrum,rrv_x,rrv_c_Exp);
 
-        ## Erf times for mj spectrum
+        ## Erf times Exp for mj spectrum
         if in_model_name == "ErfExp" :
             print "########### Erf*Exp for mj fit  ############"
-            rrv_c_ErfExp      = RooRealVar("rrv_c_ErfExp"+label+"_"+self.channel,"rrv_c_ErfExp"+label+"_"+self.channel,-0.05,-0.1,-1e-4);
-            rrv_offset_ErfExp = RooRealVar("rrv_offset_ErfExp"+label+"_"+self.channel,"rrv_offset_ErfExp"+label+"_"+self.channel,60.,30.,120);
-            rrv_width_ErfExp  = RooRealVar("rrv_width_ErfExp"+label+"_"+self.channel,"rrv_width_ErfExp"+label+"_"+self.channel,30.,10, 60.);
-            model_pdf         = ROOT.RooErfExpPdf("model_pdf"+label+"_"+self.channel+mass_spectrum,"model_pdf"+label+"_"+self.channel+mass_spectrum,rrv_x,rrv_c_ErfExp,rrv_offset_ErfExp,rrv_width_ErfExp);
+            #rrv_c_ErfExp      = RooRealVar("rrv_c_ErfExp"+label+"_"+self.channel,"rrv_c_ErfExp"+label+"_"+self.channel,-0.05,-0.1,-1e-4);
+	    rrv_c_ErfExp      = RooRealVar("rrv_c_ErfExp"+label+"_"+self.channel,"rrv_c_ErfExp"+label+"_"+self.channel,15.,0.,30);
+            rrv_offset_ErfExp = RooRealVar("rrv_offset_ErfExp"+label+"_"+self.channel,"rrv_offset_ErfExp"+label+"_"+self.channel,60.,30.,150);
+            rrv_width_ErfExp  = RooRealVar("rrv_width_ErfExp"+label+"_"+self.channel,"rrv_width_ErfExp"+label+"_"+self.channel,50.,30, 100.);
+            #model_pdf         = ROOT.RooErfExpPdf("model_pdf"+label+"_"+self.channel+mass_spectrum,"model_pdf"+label+"_"+self.channel+mass_spectrum,rrv_x,rrv_c_ErfExp,rrv_offset_ErfExp,rrv_width_ErfExp);
+            model_pdf         = ROOT.RooErfExpDecoPdf("model_pdf"+label+"_"+self.channel+mass_spectrum,"model_pdf"+label+"_"+self.channel+mass_spectrum,rrv_x,rrv_c_ErfExp,rrv_offset_ErfExp,rrv_width_ErfExp);
 
         ## different initial values -> for mlvj
         if in_model_name == "ErfExp_v1" :
@@ -962,11 +970,11 @@ objName ==objName_before ):
         ## User1 function 
         if in_model_name == "User1":
             print "########### User 1 Pdf  for mlvj fit ############"
-            rrv_p0     = RooRealVar("rrv_p0_User1"+label+"_"+self.channel,"rrv_p0_User1"+label+"_"+self.channel, 30, 10, 90);
+            rrv_p0     = RooRealVar("rrv_p0_User1"+label+"_"+self.channel,"rrv_p0_User1"+label+"_"+self.channel, 12, 10, 30);
             if self.wtagger_label=="HP": #change this!
                 rrv_p1 = RooRealVar("rrv_p1_User1"+label+"_"+self.channel,"rrv_p1_User1"+label+"_"+self.channel, -4, -9, -2);
             else:
-                rrv_p1 = RooRealVar("rrv_p1_User1"+label+"_"+self.channel,"rrv_p1_User1"+label+"_"+self.channel, -2, -4, 0.);
+                rrv_p1 = RooRealVar("rrv_p1_User1"+label+"_"+self.channel,"rrv_p1_User1"+label+"_"+self.channel, -2.5, -4, 0.);
             model_pdf=RooUser1Pdf("model_pdf"+label+"_"+self.channel+mass_spectrum,"model_pdf"+label+"_"+self.channel+mass_spectrum,rrv_x,rrv_p0,rrv_p1);
 
         ## Exp+Gaus or mj spectrum
@@ -981,6 +989,7 @@ objName ==objName_before ):
             gaus            = RooGaussian("gaus"+label+"_"+self.channel,"gaus"+label+"_"+self.channel, rrv_x,rrv_mean1_gaus,rrv_sigma1_gaus);
 
             model_pdf       = RooAddPdf("model_pdf"+label+"_"+self.channel+mass_spectrum,"model_pdf"+label+"_"+self.channel+mass_spectrum,RooArgList(exp,gaus),RooArgList(rrv_high))
+
 
         ## Erf*Exp + 2Gaus for mj spectrum
 	###TTBARMJFIT
@@ -1016,6 +1025,7 @@ objName ==objName_before ):
             erfexp = ROOT.RooErfExpPdf("erfexp"+label+"_"+self.channel+mass_spectrum,"erfexp"+label+"_"+self.channel+mass_spectrum,rrv_x,rrv_c_ErfExp,rrv_offset_ErfExp,rrv_width_ErfExp);
 
             rrv_frac = RooRealVar("rrv_frac"+label+"_"+self.channel,"rrv_frac"+label+"_"+self.channel, 0.5,0.,1.);
+	    #only one gauss
             #model_pdf =RooAddPdf("model_pdf"+label+"_"+self.channel+mass_spectrum,"model_pdf"+label+"_"+self.channel+mass_spectrum,RooArgList(erfexp, gaus1,gaus2),RooArgList(rrv_frac, rrv_frac_2gaus),1)
 	    model_pdf =RooAddPdf("model_pdf"+label+"_"+self.channel+mass_spectrum,"model_pdf"+label+"_"+self.channel+mass_spectrum,RooArgList(erfexp, gaus1),RooArgList(rrv_frac),1)
         ## 2Gaus+2Gaus for VV mj spectrum -> WZ and WW
@@ -1260,6 +1270,7 @@ objName ==objName_before ):
         rrv_tmp=self.workspace4fit_.var("rrv_number"+label+"_signal_region"+"_"+self.channel+"_mlvj");
         print "Events Number in Signal Region from fitting: %s"%(rrv_tmp.getVal()*signalInt_val)
 	rrv_tmp_3500 = RooRealVar('rrv_nevents_900_3500_'+label+'_'+self.channel,'rrv_nevents_900_3500_'+label+'_'+self.channel,rrv_tmp.getVal()*(signalInt_val-over3500Int_val))
+	rrv_tmp_3500.setError(rrv_tmp.getError())
 	getattr(self.workspace4limit_,'import')(rrv_tmp_3500)
 
         #### store the info in the output file
@@ -1680,7 +1691,8 @@ objName ==objName_before ):
          rrv_WJets0massdn.Print();
 
         ### total uncertainty combining the result with two different shapes
-        total_uncertainty = TMath.Sqrt( TMath.Power(rrv_WJets0.getError(),2) + TMath.Power(rrv_WJets01.getVal()-rrv_WJets0.getVal(),2) );
+	#@#increase W+Jets uncertainty from fit by 20% since not all shape parameters were floating
+        total_uncertainty = TMath.Sqrt( TMath.Power(rrv_WJets0.getError()*1.2,2) + TMath.Power(rrv_WJets01.getVal()-rrv_WJets0.getVal(),2) );
         rrv_WJets0.setError(total_uncertainty);
         rrv_WJets0.Print();
 
@@ -1732,31 +1744,68 @@ objName ==objName_before ):
 		ttbar_error	= RooRealVar('ttbar_error','ttbar_error',self.workspace4fit_.var('rrv_number_TTbar_xww%s_%s_mj'%(massscale,self.channel)).getError())
 		getattr(self.workspace4fit_,'import')(meanval)
 		getattr(self.workspace4fit_,'import')(ttbar_error)
-
-	mean 		= RooRealVar('ttbar_norm_mean','ttbar_norm_mean',self.workspace4fit_.var('meanval').getVal())
-	sigma 		= RooRealVar('ttbar_norm_sigma','ttbar_norm_sigma',0.055 * mean.getVal())
-	ttbar_gauss	= RooGaussian("ttbar_gauss_uncert","ttbar_gauss_uncert",self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)),mean,sigma)
-	ttbar_gauss.Print()
-	
-	model_data4fit	= RooProdPdf("model_data_xww%s_%s_mj_4fit"%(massscale,self.channel),"model_data_xww%s_%s_mj_4fit"%(massscale,self.channel),model_data,ttbar_gauss)
 	#@#set value and error of rrv_number_ttbar to prefit for WJets01-fit
-	if '_WJets0_' not in label:
+	else:
 		self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setVal(self.workspace4fit_.var('meanval').getVal())
 		self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setError(self.workspace4fit_.var('ttbar_error').getVal())
-		self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setRange(0,1e4)
-	#@#
+
+	mean 			= RooRealVar('ttbar_norm_mean_%s'%label,'ttbar_norm_mean_%s'%label,self.workspace4fit_.var('meanval').getVal())
+	ttbar_xs_uncertainty	= 0.055
+	sigma 			= RooRealVar('ttbar_norm_sigma_%s'%label,'ttbar_norm_sigma_%s'%label,ttbar_xs_uncertainty * mean.getVal())
+	ttbar_gauss		= RooGaussian("ttbar_gauss_uncert_%s"%label,"ttbar_gauss_uncert_%s"%label,self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)),mean,sigma)
+	
+	model_data4fit	= RooProdPdf("model_data_xww%s_%s_mj_4fit"%(massscale,self.channel),"model_data_xww%s_%s_mj_4fit"%(massscale,self.channel),model_data,ttbar_gauss)
+	model_data4fit.Print()
+	#raw_input('...')
 
 	self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setConstant(kFALSE)
+
+	#save pre-fit model
+	if 'WJets0_' in label:
+		fileOut4fit	= TFile.Open('cards_%s_%s/mj_closure.root'%(self.channel,self.wtagger_label),'recreate')
+	elif 'WJets01_' in label:
+		fileOut4fit	= TFile.Open('cards_%s_%s/mj_closureWJets01.root'%(self.channel,self.wtagger_label),'recreate')
+	w4fit		= RooWorkspace('w4fit')
+	getattr(w4fit,'import')(model_data4fit)
+	getattr(w4fit,'import')(rdataset_data_mj)
+	w4fit.Write()
+	fileOut4fit.Close()
+
+	###
         rfresult = model_data4fit.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo,sb_hi") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2) );
         rfresult = model_data4fit.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo,sb_hi") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2), RooFit.Minimizer("Minuit2") );
+	##4DEBUG
+	#rfresult = model_data4fit.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2) );
+        #rfresult = model_data4fit.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2), RooFit.Minimizer("Minuit2") );
+	##
+
 	self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setConstant(kTRUE)
         getattr(self.workspace4fit_,"import")(model_data)
 	getattr(self.workspace4fit_,'import')(rfresult)
 	allfitresultsmjsignal.append(rfresult)
 	allfitresults.append(rfresult)
         rfresult.Print();
-
 	print 'realtive error of ttbar-normalization: ' + str(self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).getError() / self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).getVal())
+	#raw_input(label)
+
+	#save post-fit model
+	if 'WJets0_' in label:
+		fileOut4fit	= TFile.Open('cards_%s_%s/mj_closurepost.root'%(self.channel,self.wtagger_label),'recreate')
+		w4fit2		= RooWorkspace('w4fitpost')
+		getattr(w4fit2,'import')(model_data4fit)
+		getattr(w4fit2,'import')(rdataset_data_mj)
+		getattr(w4fit2,'import')(rfresult)
+		w4fit2.Write()
+		rfresult.Print()
+		#w4fit2.Print()
+		fileOut4fit.Close()
+		#raw_input(".")
+	#set ttbar-norm to result of WJets0
+	if 'WJets01_' in label:
+		self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setVal(mean.getVal())
+		self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setError(sigma.getVal())
+
+
 
         rfresult.covarianceMatrix().Print();
 
@@ -1954,7 +2003,10 @@ objName ==objName_before ):
 	#@#
 
         #### Error on the normalization --> from a dedicated function taking into account shape uncertainty
+	print rrv_number_WJets_in_mj_signal_region_from_fitting.getError()
         rrv_number_WJets_in_mj_signal_region_from_fitting.setError( Calc_error_extendPdf(rdataset_data_mj, model_WJets, rfresult,"signal_region") );
+	print rrv_number_WJets_in_mj_signal_region_from_fitting.getError()
+	print rrv_number_WJets_in_mj_signal_region_from_fitting.getError()/rrv_number_WJets_in_mj_signal_region_from_fitting.getVal()
         print "########## error on the normalization due to shape + norm = %s"%(rrv_number_WJets_in_mj_signal_region_from_fitting.getError());
         getattr(self.workspace4fit_,"import")(rrv_number_WJets_in_mj_signal_region_from_fitting);
 	getattr(self.workspace4fit_,"import")(rrv_number_WJets_in_mj_sb_region_from_fitting);
@@ -2008,7 +2060,6 @@ objName ==objName_before ):
 	#@# make missing plot
 	if 'TTBAR' in in_file_name and 'sb' in in_range:
 		self.draw_canvas_with_pull( rrv_mass_lvj, datahist,mplot, mplot_pull,ndof,parameters_list,"%s/ExtraPlots/"%(self.plotsDir), in_file_name,"m_lvj"+in_range+mlvj_model, show_constant_parameter, 1)
-
 
          
         ## if the shape parameters has to be decorrelated
@@ -2093,7 +2144,8 @@ objName ==objName_before ):
 	allfitresults.append(rfresult)
 	allfitresultsmj.append(rfresult)
 	getattr(self.workspace4fit_,'import')(rfresult)
-	raw_input(label)
+	#if 'WJets0_' in label:
+	#	raw_input(label)
 	
         ## Plot the result
         mplot = rrv_mass_j.frame(RooFit.Title(label+" fitted by "+in_model_name), RooFit.Bins(int(rrv_mass_j.getBins()/self.narrow_factor)) );
@@ -2146,7 +2198,7 @@ objName ==objName_before ):
         self.draw_canvas_with_pull( rrv_mass_j,datahist,mplot, mplot_pull,ndof,parameters_list,"%s/m_j_fitting/"%(self.plotsDir), label+in_file_name, in_model_name)
 
 	#@#more plots
-	if 'TTbar' in label:
+	if 'TTbar' in label or 'VV' in label:
 	    lowerLine = TLine(65,0.,65,mplot.GetMaximum()*0.8); lowerLine.SetLineWidth(2); lowerLine.SetLineColor(kBlack); lowerLine.SetLineStyle(9);
             middleLine = TLine(85,0.,85,mplot.GetMaximum()*0.9); middleLine.SetLineWidth(2); middleLine.SetLineColor(kBlack); middleLine.SetLineStyle(9);
             upperLine = TLine(105,0.,105,mplot.GetMaximum()*0.9); upperLine.SetLineWidth(2); upperLine.SetLineColor(kBlack); upperLine.SetLineStyle(9);
@@ -2498,7 +2550,11 @@ objName ==objName_before ):
 	
 	### Fit in mj depends on the mlvj lower limit -> fitting the turn on at low mass or not
         self.fit_mj_single_MC(self.file_WJets0_mc,"_WJets0_xww","ErfExp");
-        self.fit_mj_single_MC(self.file_WJets0_mc,"_WJets01_xww","User1");
+        #self.fit_mj_single_MC(self.file_WJets0_mc,"_WJets01_xww","ErfExp")        
+	self.fit_mj_single_MC(self.file_WJets0_mc,"_WJets01_xww","User1");
+        #self.fit_mj_single_MC(self.file_WJets0_mc,"_WJets0_xww","User1");
+        #self.fit_mj_single_MC(self.file_WJets0_mc,"_WJets01_xww","ErfExp");
+
             
         #### Fit the mlvj in sb_lo, signal region using two different model as done in the mj
         self.fit_mlvj_model_single_MC(self.file_WJets0_mc,"_WJets0_xww","_sb_lo",self.MODEL_4_mlvj, 0, 0, 1, 1);
@@ -2568,9 +2624,9 @@ objName ==objName_before ):
         getattr(self.workspace4limit_,"import")(self.workspace4fit_.var("rrv_number_STop_xww_signal_region_%s_mlvj"%(self.channel)).clone("rate_STop_xww_for_unbin"));
 	
         ### Set the error properly -> taking into account lumi, Vtagger and theoretical uncertainty on XS -> for VV, TTbar and STop
-        self.workspace4limit_.var("rate_VV_xww_for_unbin").setError(self.workspace4limit_.var("rate_VV_xww_for_unbin").getVal()*TMath.Sqrt( self.lumi_uncertainty*self.lumi_uncertainty +self.XS_VV_NLO_uncertainty*self.XS_VV_NLO_uncertainty ) );
-        self.workspace4limit_.var("rate_STop_xww_for_unbin").setError(self.workspace4limit_.var("rate_STop_xww_for_unbin").getVal()*TMath.Sqrt( self.lumi_uncertainty*self.lumi_uncertainty +self.XS_STop_NLO_uncertainty*self.XS_STop_NLO_uncertainty ) );
-        self.workspace4limit_.var("rate_TTbar_xww_for_unbin").setError(self.workspace4limit_.var("rate_TTbar_xww_for_unbin").getVal()*TMath.Sqrt( self.lumi_uncertainty*self.lumi_uncertainty ))
+        #self.workspace4limit_.var("rate_VV_xww_for_unbin").setError(self.workspace4limit_.var("rate_VV_xww_for_unbin").getVal()*TMath.Sqrt( self.lumi_uncertainty*self.lumi_uncertainty +self.XS_VV_NLO_uncertainty*self.XS_VV_NLO_uncertainty ) );
+        #self.workspace4limit_.var("rate_STop_xww_for_unbin").setError(self.workspace4limit_.var("rate_STop_xww_for_unbin").getVal()*TMath.Sqrt( self.lumi_uncertainty*self.lumi_uncertainty +self.XS_STop_NLO_uncertainty*self.XS_STop_NLO_uncertainty ) );
+        #self.workspace4limit_.var("rate_TTbar_xww_for_unbin").setError(self.workspace4limit_.var("rate_TTbar_xww_for_unbin").getVal()*TMath.Sqrt( self.lumi_uncertainty*self.lumi_uncertainty ))
 
         ### Get the dataset for data into the signal region
         getattr(self.workspace4limit_,"import")(self.workspace4fit_.data("rdataset_data_xww_signal_region_%s_mlvj"%(self.channel)).Clone("data_obs_xww_%s_%s"%(self.channel,self.wtagger_label)))
@@ -2840,9 +2896,10 @@ objName ==objName_before ):
     def save_workspace_to_file(self):
         self.workspace4limit_.writeToFile(self.file_rlt_root);
         self.file_out.close()
-	#FileOutTmp = TFile.Open("cards_%s_%s/mj_workspace.root"%(self.channel,self.wtagger_label),"recreate")
-	#self.workspace4fit_.writeToFile("TMPTMP/cards_%s_%s/mj_workspace.root"%(self.channel,self.wtagger_label));
-	#FileOutTmp.Close()
+	if options.savews:
+		FileOutTmp = TFile.Open("cards_%s_%s/mj_workspace_postfit.root"%(self.channel,self.wtagger_label),"recreate")
+		self.workspace4fit_.Write();
+		FileOutTmp.Close()
 
     #### Read the final workspace and produce the latest plots 
     def read_workspace(self, logy=0):
@@ -2917,6 +2974,7 @@ objName ==objName_before ):
 
         if data_obs.sumEntries() != 0:
          #### scale factor in order to scale MC to data in the final plot -> in order to avoid the normalization to data which is done by default in rooFit
+	 #@#not needed without data?
          scale_number_Total_background_MC = rrv_number_Total_background_MC.getVal()/data_obs.sumEntries()
         else:
 	 scale_number_Total_background_MC = rrv_number_Total_background_MC.getVal()   
@@ -3035,7 +3093,7 @@ if __name__ == '__main__':
         if options.category.find('HP2') != -1 or options.category.find('ALLP2') != -1:	
            pre_limit_sb_correction("method1",channel,options.jetalgo,40,150,1900,5000,"Exp","ExpN") 
 	else:
-           pre_limit_sb_correction("method1",channel,options.jetalgo,40,150,900,5000,"ExpN","ExpTail")
+           pre_limit_sb_correction("method1",channel,options.jetalgo,40,150,options.mlvj_lo,options.mlvj_hi,"ExpN","ExpTail")
 
     table=''
     for res in allfitresults:

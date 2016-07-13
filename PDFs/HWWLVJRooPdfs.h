@@ -101,6 +101,43 @@ private:
 };
 
 
+/////// Error Function * Exponential for W+Jets
+
+Double_t ErfExpDeco(Double_t x, Double_t c, Double_t offset, Double_t width);
+ 
+class RooErfExpDecoPdf : public RooAbsPdf {
+ public:
+  RooErfExpDecoPdf() {} ;  // default constructor
+  RooErfExpDecoPdf(const char *name, const char *title,
+	      RooAbsReal& _x,
+	      RooAbsReal& _c, // slope of the exp
+	      RooAbsReal& _offset, // offset of the erf
+	      RooAbsReal& _width); // width of the erf
+
+  RooErfExpDecoPdf(const RooErfExpDecoPdf& other, const char* name=0) ; // ctor
+
+  virtual TObject* clone(const char* newname) const { return new RooErfExpDecoPdf(*this,newname); } // clone 
+
+  inline virtual ~RooErfExpDecoPdf() { } // dtor
+
+  Int_t getAnalyticalIntegral(RooArgSet& allVars, RooArgSet& analVars, const char* rangeName=0) const ; // analytic integral
+  Double_t analyticalIntegral(Int_t code, const char* rangeName=0) const ;
+
+protected:
+
+  RooRealProxy x ;
+  RooRealProxy c ;
+  RooRealProxy offset ;
+  RooRealProxy width ;
+  
+  Double_t evaluate() const ; // evaluate method 
+
+private:
+
+  ClassDef(RooErfExpDecoPdf,1) // Your description goes here...
+};
+
+
 /////// Error Function * Exponential 
 
 Double_t ErfExp(Double_t x, Double_t c, Double_t offset, Double_t width);
@@ -547,6 +584,9 @@ public:
   virtual TObject* clone(const char* newname) const { return new RooUser1Pdf(*this,newname); }
 
   inline virtual ~RooUser1Pdf() { }
+
+  Int_t getAnalyticalIntegral(RooArgSet& allVars, RooArgSet& analVars, const char* rangeName=0) const ; // analytic integral
+  Double_t analyticalIntegral(Int_t code, const char* rangeName=0) const ;
 
 protected:
 
@@ -1173,3 +1213,4 @@ private:
 
 
 #endif
+
