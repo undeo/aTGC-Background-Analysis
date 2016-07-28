@@ -1822,6 +1822,7 @@ objName ==objName_before ):
 	#set which normalizations float in addition to W+Jets
 	self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setConstant(kFALSE)
 	self.workspace4fit_.var("rrv_number_VV_xww%s_%s_mj"%(massscale,self.channel)).setConstant(kFALSE)
+	#self.workspace4fit_.var("rrv_p0_User1_WJets01_xww_%s"%self.channel).setConstant(kTRUE)
 
 	#save pre-fit model
 	if 'WJets0_' in label:
@@ -1835,17 +1836,24 @@ objName ==objName_before ):
 	fileOut4fit.Close()
 
 	###
-        #rfresult = model_data4fit.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo,sb_hi") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2) );
-        #rfresult = model_data4fit.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo,sb_hi") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2), RooFit.Minimizer("Minuit2") );
-	###use mj signal region as well for fit
-        rfresult = model_data4fit.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo_to_sb_hi") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2) );
-        rfresult = model_data4fit.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo_to_sb_hi") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2), RooFit.Minimizer("Minuit2") );
+	if options.closure:
+        	rfresult = model_data4fit.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo,sb_hi") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2) );
+        	rfresult = model_data4fit.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo,sb_hi") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2), RooFit.Minimizer("Minuit2") );
+	else:
+		###use mj signal region as well for fit
+	        rfresult = model_data4fit.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo_to_sb_hi") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2) );
+        	rfresult = model_data4fit.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo_to_sb_hi") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2), RooFit.Minimizer("Minuit2") );
 	##4DEBUG
 	#rfresult = model_data.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo,sb_hi") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2) );
         #rfresult = model_data.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo,sb_hi") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2), RooFit.Minimizer("Minuit2") );
 	##
 
+
+
+
 	self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setConstant(kTRUE)
+	self.workspace4fit_.var("rrv_number_VV_xww%s_%s_mj"%(massscale,self.channel)).setConstant(kTRUE)
+
 	#model_data.SetName("model_data_xww%s_%s_mj"%(massscale,self.channel))
         getattr(self.workspace4fit_,"import")(model_data)
 	getattr(self.workspace4fit_,'import')(rfresult)
@@ -1867,12 +1875,6 @@ objName ==objName_before ):
 		#w4fit2.Print()
 		fileOut4fit.Close()
 		#raw_input(".")
-	#set ttbar-norm to result of WJets0
-	if 'WJets01_' in label:
-		self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setVal(mean_ttbar.getVal())
-		self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setError(sigma_ttbar.getVal())
-		self.workspace4fit_.var("rrv_number_VV_xww%s_%s_mj"%(massscale,self.channel)).setVal(mean_VV.getVal())
-		self.workspace4fit_.var("rrv_number_VV_xww%s_%s_mj"%(massscale,self.channel)).setError(sigma_VV.getVal())
 
 
         rfresult.covarianceMatrix().Print();
@@ -2068,7 +2070,23 @@ objName ==objName_before ):
         getattr(self.workspace4fit_,"import")(rrv_number_WJets_in_mj_signal_region_from_fitting);
 	getattr(self.workspace4fit_,"import")(rrv_number_WJets_in_mj_sb_region_from_fitting);
         rrv_number_WJets_in_mj_signal_region_from_fitting.Print();
-	
+
+
+	if '_WJets0_' in label:
+		meanval_ttbar_postfit	= RooRealVar('meanval_ttbar_postfit','meanval_ttbar_postfit',self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).getVal())
+		meanval_VV_postfit	= RooRealVar('meanval_VV_postfit','meanval_VV_postfit',self.workspace4fit_.var("rrv_number_VV_xww%s_%s_mj"%(massscale,self.channel)).getVal())
+		ttbar_error_postfit	= RooRealVar('ttbar_error_postfit','ttbar_error_postfit',self.workspace4fit_.var('rrv_number_TTbar_xww%s_%s_mj'%(massscale,self.channel)).getError())
+		VV_error_postfit	= RooRealVar('VV_error_postfit','VV_error_postfit',self.workspace4fit_.var('rrv_number_VV_xww%s_%s_mj'%(massscale,self.channel)).getError())
+		getattr(self.workspace4fit_,'import')(meanval_ttbar_postfit)
+		getattr(self.workspace4fit_,'import')(ttbar_error_postfit)
+		getattr(self.workspace4fit_,'import')(meanval_VV_postfit)
+		getattr(self.workspace4fit_,'import')(VV_error_postfit)
+	#set fitted norms and errors to result of WJets0 fit
+	else:
+		self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setVal(self.workspace4fit_.var("meanval_ttbar_postfit").getVal())
+		self.workspace4fit_.var("rrv_number_TTbar_xww%s_%s_mj"%(massscale,self.channel)).setError(self.workspace4fit_.var("ttbar_error_postfit").getError())
+		self.workspace4fit_.var("rrv_number_VV_xww%s_%s_mj"%(massscale,self.channel)).setVal(self.workspace4fit_.var("meanval_VV_postfit").getVal())
+		self.workspace4fit_.var("rrv_number_VV_xww%s_%s_mj"%(massscale,self.channel)).setVal(self.workspace4fit_.var("meanval_VV_postfit").getError())
 
     def mj_prefit_plot(self,label,massscale=""): 
 
