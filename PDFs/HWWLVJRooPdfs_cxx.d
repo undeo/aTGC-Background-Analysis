@@ -80,6 +80,7 @@
 ./HWWLVJRooPdfs_cxx.so: /cvmfs/cms.cern.ch/slc6_amd64_gcc472/lcg/roofit/5.32.03-cms/include/RooExponential.h
 ./HWWLVJRooPdfs_cxx.so: /cvmfs/cms.cern.ch/slc6_amd64_gcc472/lcg/root/5.32.00-cms/include/TMath.h
 ./HWWLVJRooPdfs_cxx.so: /cvmfs/cms.cern.ch/slc6_amd64_gcc472/lcg/root/5.32.00-cms/include/TError.h
+./HWWLVJRooPdfs_cxx.so: sf_hyperg.h
 ./HWWLVJRooPdfs_cxx.so: /cvmfs/cms.cern.ch/slc6_amd64_gcc472/lcg/roofit/5.32.03-cms/include/RooPlot.h
 ./HWWLVJRooPdfs_cxx.so: /cvmfs/cms.cern.ch/slc6_amd64_gcc472/lcg/roofit/5.32.03-cms/include/RooList.h
 ./HWWLVJRooPdfs_cxx.so: /cvmfs/cms.cern.ch/slc6_amd64_gcc472/lcg/root/5.32.00-cms/include/TFile.h
