@@ -3,7 +3,7 @@ import os
 chs = ['el','mu']
 cats = ['WW','WZ']
 binlo	= 900
-binhi	= 5000
+binhi	= 3500
 
 for ch in chs:
 
@@ -76,10 +76,16 @@ for ch in chs:
 		os.system('cp %s/treeEDBR_TTBARpowheg_xww_m_lvj_signal_regionExpN_with_pull_log.pdf %s/TTbar_%s'%(path3,output,nameend3))
 
 		print 'check_workspace_for_limit__log.pdf'
-		os.system('cp plots_%s_HP%s_%s_%s/ExtraPlots/check_workspace_for_limit_log.pdf %s/all_bkg_%s_mlvj_%s.pdf'%(ch,cat[1],binlo,binhi,output,ch,cat))
+		os.system('cp %s/check_workspace_for_limit__with_pull_log.pdf %s/all_bkg_%s_mlvj_%s.pdf'%(path3,output,ch,cat))
 
 
 		print '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< alpha-plot for %s,%s >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'%(ch,cat)
 		print 'correction_pdf_WJets0_xww_ExpN_M_lvj_signal_region_to_sideband.pdf'
 		os.system('cp plots_%s_HP%s_%s_%s/other/correction_pdf_WJets0_xww_ExpN_M_lvj_signal_region_to_sideband.pdf %s/alpha_%s_%s.pdf'%(ch,cat[1],binlo,binhi,output,ch,cat))
+
+print ' '
+os.system('ls %s'%output)
+raw_input('copying shown plots to note')
+os.system('cp -v %s/*pdf ../../../cmsnotessvn/notes/AN-15-160/trunk/plots/background/'%output) 
+
 
